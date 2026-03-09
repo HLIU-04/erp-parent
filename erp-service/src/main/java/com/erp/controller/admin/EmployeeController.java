@@ -26,4 +26,16 @@ public class EmployeeController {
         employeeService.add(employee);
         return Result.success();
     }
+
+    /**
+     * 根据id删除员工
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/employees/{id}")
+    public Result delete(@PathVariable Integer id){
+        log.info("删除员工");
+        employeeService.deleteById(id);
+        return Result.success();
+    }
 }

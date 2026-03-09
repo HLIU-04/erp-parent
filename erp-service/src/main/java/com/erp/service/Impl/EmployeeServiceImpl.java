@@ -23,4 +23,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setUpdateTime(LocalDateTime.now());
         employeeMapper.add(employee);
     }
+
+    /**
+     * 根据id删除员工
+     * @param id
+     */
+    public void deleteById(Integer id) {
+        employeeMapper.deleteById(id);
+    }
 }

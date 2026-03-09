@@ -8,4 +8,10 @@ public interface EmployeeService {
      * @param employee
      */
     void add(Employee employee);
+
+    /**
+     * 根据id删除员工
+     * @param id
+     */
+    void deleteById(Integer id);
 }
