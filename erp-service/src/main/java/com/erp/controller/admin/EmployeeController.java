@@ -38,4 +38,15 @@ public class EmployeeController {
         employeeService.deleteById(id);
         return Result.success();
     }
+
+    /**
+     * 查询单个员工
+     * @param
+     * @return
+     */
+    @GetMapping("/employees/{id}")
+    public Result<Employee> getById(@PathVariable Integer id){
+        log.info("查询单个员工");
+        return Result.success(employeeService.getById(id));
+    }
 }

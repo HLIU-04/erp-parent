@@ -4,6 +4,7 @@ import com.erp.entity.Employee;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface EmployeeMapper {
@@ -21,4 +22,12 @@ public interface EmployeeMapper {
      */
     @Delete("delete from employee where id = #{id}")
     void deleteById(Integer id);
+
+    /**
+     * 根据id查询员工
+     * @param id
+     * @return
+     */
+    @Select("select * from employee where id = #{id}")
+    Employee getById(Integer id);
 }
