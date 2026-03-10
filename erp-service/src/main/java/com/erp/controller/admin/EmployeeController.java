@@ -1,6 +1,7 @@
 package com.erp.controller.admin;
 
 import com.erp.entity.Employee;
+import com.erp.result.PageResult;
 import com.erp.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,5 +60,15 @@ public class EmployeeController {
     public Result<Employee> getById(@PathVariable Integer id){
         log.info("查询单个员工:{}", id);
         return Result.success(employeeService.getById(id));
+    }
+
+    /**
+     * 分页查询员工
+     */
+    @GetMapping("/employees/page")
+    public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
+                       @RequestParam(defaultValue = "10") Integer pageSize){
+        PageResult pageResult = employeeService.page(pageNum, pageSize);
+        return Result.success(pageResult);
     }
 }

@@ -1,6 +1,7 @@
 package com.erp.service;
 
 import com.erp.entity.Employee;
+import com.erp.result.PageResult;
 
 public interface EmployeeService {
     /**
@@ -27,4 +28,9 @@ public interface EmployeeService {
      * @param employee
      */
     void update(Employee employee);
+
+    /**
+     * 分页查询员工
+     */
+    PageResult page(Integer pageNum, Integer pageSize);
 }
