@@ -39,6 +39,14 @@ public class EmployeeServiceImpl implements EmployeeService {
      */
     public Employee getById(Integer id) {
         return employeeMapper.getById(id);
+    }
 
+    /**
+     * 修改员工信息
+     * @param employee
+     */
+    public void update(Employee employee) {
+        employee.setUpdateTime(LocalDateTime.now());
+        employeeMapper.update(employee);
     }
 }

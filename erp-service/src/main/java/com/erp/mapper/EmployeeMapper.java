@@ -30,4 +30,10 @@ public interface EmployeeMapper {
      */
     @Select("select * from employee where id = #{id}")
     Employee getById(Integer id);
+
+    /**
+     * 修改员工信息
+     * @param employee
+     */
+    void update(Employee employee);
 }

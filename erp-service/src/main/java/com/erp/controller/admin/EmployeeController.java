@@ -20,9 +20,9 @@ public class EmployeeController {
      * @param employee
      * @return
      */
-    @PostMapping("employees")
+    @PostMapping("/employees")
     public Result add(@RequestBody Employee employee){
-        log.info("添加员工");
+        log.info("添加员工:{}", employee);
         employeeService.add(employee);
         return Result.success();
     }
@@ -34,8 +34,19 @@ public class EmployeeController {
      */
     @DeleteMapping("/employees/{id}")
     public Result delete(@PathVariable Integer id){
-        log.info("删除员工");
+        log.info("删除员工:{}",id);
         employeeService.deleteById(id);
+        return Result.success();
+    }
+
+    /**
+     * 修改员工信息
+     * @param employee
+     */
+    @PutMapping("/employees")
+    public Result update(@RequestBody Employee employee){
+        log.info("修改员工信息:{}", employee);
+        employeeService.update(employee);
         return Result.success();
     }
 
@@ -46,7 +57,7 @@ public class EmployeeController {
      */
     @GetMapping("/employees/{id}")
     public Result<Employee> getById(@PathVariable Integer id){
-        log.info("查询单个员工");
+        log.info("查询单个员工:{}", id);
         return Result.success(employeeService.getById(id));
     }
 }
