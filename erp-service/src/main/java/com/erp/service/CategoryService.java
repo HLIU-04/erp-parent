@@ -1,6 +1,7 @@
 package com.erp.service;
 
 import com.erp.entity.Category;
+import com.erp.result.PageResult;
 
 public interface CategoryService {
 
@@ -28,4 +29,9 @@ public interface CategoryService {
      * @return
      */
     Category getById(Integer id);
+
+    /**
+     * 分页查询分类
+     */
+    PageResult page(Integer pageNum, Integer pageSize);
 }

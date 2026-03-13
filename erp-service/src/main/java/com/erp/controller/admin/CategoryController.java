@@ -1,6 +1,7 @@
 package com.erp.controller.admin;
 
 import com.erp.entity.Category;
+import com.erp.result.PageResult;
 import com.erp.result.Result;
 import com.erp.service.CategoryService;
 import lombok.extern.slf4j.Slf4j;
@@ -59,5 +60,15 @@ public class CategoryController {
     public Result<Category> getById(@PathVariable Integer id){
         log.info("查询单个分类:{}", id);
         return Result.success(categoryService.getById(id));
+    }
+
+    /**
+     * 分页查询分类
+     */
+    @GetMapping("/categories/page")
+    public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
+                       @RequestParam(defaultValue = "10") Integer pageSize){
+        PageResult pageResult = categoryService.page(pageNum, pageSize);
+        return Result.success(pageResult);
     }
 }
