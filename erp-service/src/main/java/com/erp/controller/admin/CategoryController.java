@@ -16,7 +16,7 @@ public class CategoryController {
     private CategoryService categoryService;
 
     /**
-     * 添加分类
+     * 新增分类
      * @param
      * @return
      */
@@ -36,6 +36,17 @@ public class CategoryController {
     public Result delete(@PathVariable Integer id){
         log.info("删除分类:{}",id);
         categoryService.deleteById(id);
+        return Result.success();
+    }
+
+    /**
+     * 修改分类信息
+     * @param category
+     */
+    @PutMapping("/categories")
+    public Result update(@RequestBody Category category){
+        log.info("修改分类信息:{}", category);
+        categoryService.update(category);
         return Result.success();
     }
 }

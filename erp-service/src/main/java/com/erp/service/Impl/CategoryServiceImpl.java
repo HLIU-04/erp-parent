@@ -31,4 +31,13 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteById(Integer id) {
         categoryMapper.deleteById(id);
     }
+
+    /**
+     * 修改分类信息
+     * @param category
+     */
+    public void update(Category category) {
+        category.setUpdateTime(LocalDateTime.now());
+        categoryMapper.update(category);
+    }
 }

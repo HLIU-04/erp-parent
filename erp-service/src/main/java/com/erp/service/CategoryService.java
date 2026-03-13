@@ -15,4 +15,10 @@ public interface CategoryService {
      * @param id
      */
     void deleteById(Integer id);
+
+    /**
+     * 修改分类信息
+     * @param category
+     */
+    void update(Category category);
 }

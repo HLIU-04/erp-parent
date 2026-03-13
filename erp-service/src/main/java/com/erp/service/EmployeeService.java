@@ -4,6 +4,7 @@ import com.erp.entity.Employee;
 import com.erp.result.PageResult;
 
 public interface EmployeeService {
+
     /**
      * 添加员工
      * @param employee
@@ -17,17 +18,17 @@ public interface EmployeeService {
     void deleteById(Integer id);
 
     /**
+     * 修改员工信息
+     * @param employee
+     */
+    void update(Employee employee);
+
+    /**
      * 根据id查询员工
      * @param id
      * @return
      */
     Employee getById(Integer id);
-
-    /**
-     * 修改员工信息
-     * @param employee
-     */
-    void update(Employee employee);
 
     /**
      * 分页查询员工
