@@ -9,4 +9,10 @@ public interface CategoryService {
      * @param category
      */
     void add(Category category);
+
+    /**
+     * 根据id删除分类
+     * @param id
+     */
+    void deleteById(Integer id);
 }
