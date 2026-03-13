@@ -16,8 +16,8 @@ public interface CategoryMapper {
      * 添加分类
      * @param category
      */
-    @Insert("insert into category(name, parent_id, status, create_time, update_time)" +
-    "values (#{name}, #{parentId}, #{status}, #{createTime}, #{updateTime})")
+    @Insert("insert into category(name, parent_id, create_time, update_time)" +
+    "values (#{name}, #{parentId}, #{createTime}, #{updateTime})")
     void add(Category category);
 
     /**
