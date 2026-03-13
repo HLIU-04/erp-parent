@@ -38,4 +38,15 @@ public class ProductController {
         productService.deleteById(id);
         return Result.success();
     }
+
+    /**
+     * 修改商品信息
+     * @param product
+     */
+    @PutMapping("/products")
+    public Result update(@RequestBody Product product){
+        log.info("修改商品信息:{}", product);
+        productService.update(product);
+        return Result.success();
+    }
 }

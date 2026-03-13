@@ -15,4 +15,10 @@ public interface ProductService {
      * @param id
      */
     void deleteById(Integer id);
+
+    /**
+     * 修改商品信息
+     * @param product
+     */
+    void update(Product product);
 }

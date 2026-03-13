@@ -32,4 +32,13 @@ public class ProductServiceImpl implements ProductService {
     public void deleteById(Integer id) {
         productMapper.deleteById(id);
     }
+
+    /**
+     * 修改商品信息
+     * @param product
+     */
+    public void update(Product product) {
+        product.setUpdateTime(LocalDateTime.now());
+        productMapper.update(product);
+    }
 }
