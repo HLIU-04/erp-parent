@@ -21,4 +21,11 @@ public interface CategoryService {
      * @param category
      */
     void update(Category category);
+
+    /**
+     * 根据id查询分类
+     * @param id
+     * @return
+     */
+    Category getById(Integer id);
 }

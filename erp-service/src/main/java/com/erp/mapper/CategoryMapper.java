@@ -4,6 +4,7 @@ import com.erp.entity.Category;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface CategoryMapper {
@@ -28,4 +29,12 @@ public interface CategoryMapper {
      * @param category
      */
     void update(Category category);
+
+    /**
+     * 根据id查询分类
+     * @param id
+     * @return
+     */
+    @Select("select * from category where id = #{id}")
+    Category getById(Integer id);
 }

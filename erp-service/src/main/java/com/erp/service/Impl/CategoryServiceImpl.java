@@ -40,4 +40,14 @@ public class CategoryServiceImpl implements CategoryService {
         category.setUpdateTime(LocalDateTime.now());
         categoryMapper.update(category);
     }
+
+    /**
+     * 查询单个分类
+     * @param id
+     * @return
+     */
+    @Override
+    public Category getById(Integer id) {
+        return categoryMapper.getById(id);
+    }
 }

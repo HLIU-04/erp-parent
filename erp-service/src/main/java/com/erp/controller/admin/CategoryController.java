@@ -49,4 +49,15 @@ public class CategoryController {
         categoryService.update(category);
         return Result.success();
     }
+
+    /**
+     * 查询单个分类
+     * @param
+     * @return
+     */
+    @GetMapping("/categories/{id}")
+    public Result<Category> getById(@PathVariable Integer id){
+        log.info("查询单个分类:{}", id);
+        return Result.success(categoryService.getById(id));
+    }
 }
