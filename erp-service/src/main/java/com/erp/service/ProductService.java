@@ -9,4 +9,10 @@ public interface ProductService {
      * @param product
      */
     void add(Product product);
+
+    /**
+     * 根据id删除商品
+     * @param id
+     */
+    void deleteById(Integer id);
 }
