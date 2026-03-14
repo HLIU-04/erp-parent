@@ -9,4 +9,10 @@ public interface CustomerService {
      * @param customer
      */
     void add(Customer customer);
+
+    /**
+     * 根据id删除客户
+     * @param id
+     */
+    void deleteById(Integer id);
 }

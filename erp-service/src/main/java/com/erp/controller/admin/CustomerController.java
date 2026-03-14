@@ -5,10 +5,7 @@ import com.erp.result.Result;
 import com.erp.service.CustomerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -29,4 +26,17 @@ public class CustomerController {
         customerService.add(customer);
         return Result.success();
     }
+
+    /**
+     * 根据id删除客户
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/customers/{id}")
+    public Result delete(@PathVariable Integer id){
+        log.info("删除客户:{}",id);
+        customerService.deleteById(id);
+        return Result.success();
+    }
+
 }
