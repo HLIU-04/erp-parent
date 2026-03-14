@@ -4,6 +4,7 @@ import com.erp.entity.Product;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface ProductMapper {
@@ -28,4 +29,12 @@ public interface ProductMapper {
      * @param product
      */
     void update(Product product);
+
+    /**
+     * 根据id查询商品
+     * @param id
+     * @return
+     */
+    @Select("select * from product where id = #{id}")
+    Product getById(Integer id);
 }

@@ -41,4 +41,13 @@ public class ProductServiceImpl implements ProductService {
         product.setUpdateTime(LocalDateTime.now());
         productMapper.update(product);
     }
+
+    /**
+     * 根据id查询商品
+     * @param id
+     * @return
+     */
+    public Product getById(Integer id) {
+        return productMapper.getById(id);
+    }
 }

@@ -49,4 +49,14 @@ public class ProductController {
         productService.update(product);
         return Result.success();
     }
+
+    /**
+     * 查询商品信息
+     * @param id
+     */
+    @GetMapping("/products/{id}")
+    public Result get(@PathVariable Integer id){
+        log.info("查询商品信息:{}", id);
+        return Result.success(productService.getById(id));
+    }
 }

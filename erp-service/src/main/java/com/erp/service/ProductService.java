@@ -21,4 +21,11 @@ public interface ProductService {
      * @param product
      */
     void update(Product product);
+
+    /**
+     * 根据id查询商品信息
+     * @param id
+     * @return
+     */
+    Product getById(Integer id);
 }
