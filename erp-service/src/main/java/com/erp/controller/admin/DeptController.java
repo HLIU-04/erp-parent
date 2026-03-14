@@ -38,4 +38,15 @@ public class DeptController {
         deptService.deleteById(id);
         return Result.success();
     }
+
+    /**
+     * 修改部门信息
+     * @param dept
+     */
+    @PutMapping("/depts")
+    public Result update(@RequestBody Dept dept){
+        log.info("修改部门信息:{}", dept);
+        deptService.update(dept);
+        return Result.success();
+    }
 }

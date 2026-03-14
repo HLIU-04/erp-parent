@@ -15,4 +15,10 @@ public interface DeptService {
      * @param id
      */
     void deleteById(Integer id);
+
+    /**
+     * 修改部门信息
+     * @param dept
+     */
+    void update(Dept dept);
 }

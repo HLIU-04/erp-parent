@@ -31,4 +31,13 @@ public class DeptServiceImpl implements DeptService {
     public void deleteById(Integer id) {
         deptMapper.deleteById(id);
     }
+
+    /**
+     * 修改部门信息
+     * @param dept
+     */
+    public void update(Dept dept) {
+        dept.setUpdateTime(LocalDateTime.now());
+        deptMapper.update(dept);
+    }
 }

@@ -22,4 +22,10 @@ public interface DeptMapper {
      */
     @Delete("delete from dept where id = #{id}")
     void deleteById(Integer id);
+
+    /**
+     * 修改部门信息
+     * @param dept
+     */
+    void update(Dept dept);
 }
