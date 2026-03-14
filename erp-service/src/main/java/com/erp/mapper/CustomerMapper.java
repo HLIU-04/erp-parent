@@ -22,4 +22,10 @@ public interface CustomerMapper {
      */
     @Delete("delete from customer where id = #{id}")
     void deleteById(Integer id);
+
+    /**
+     * 修改客户信息
+     * @param customer
+     */
+    void update(Customer customer);
 }

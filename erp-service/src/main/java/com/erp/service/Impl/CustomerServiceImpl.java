@@ -28,4 +28,13 @@ public class CustomerServiceImpl implements CustomerService {
     public void deleteById(Integer id) {
         customerMapper.deleteById(id);
     }
+
+    /**
+     * 修改客户信息
+     * @param customer
+     */
+    public void update(Customer customer) {
+        customer.setUpdateTime(LocalDateTime.now());
+        customerMapper.update(customer);
+    }
 }

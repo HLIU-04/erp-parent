@@ -15,4 +15,10 @@ public interface CustomerService {
      * @param id
      */
     void deleteById(Integer id);
+
+    /**
+     * 修改客户信息
+     * @param customer
+     */
+    void update(Customer customer);
 }

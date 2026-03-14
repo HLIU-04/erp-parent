@@ -39,4 +39,15 @@ public class CustomerController {
         return Result.success();
     }
 
+    /**
+     * 修改客户信息
+     * @param customer
+     */
+    @PutMapping("/customers")
+    public Result update(@RequestBody Customer customer){
+        log.info("修改客户信息:{}", customer);
+        customerService.update(customer);
+        return Result.success();
+    }
+
 }
