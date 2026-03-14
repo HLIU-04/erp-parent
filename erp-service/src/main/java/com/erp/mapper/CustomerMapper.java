@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface CustomerMapper {
 
@@ -37,4 +39,11 @@ public interface CustomerMapper {
      */
     @Select("select * from customer where id = #{id}")
     Customer getById(Integer id);
+
+    /**
+     * 分页查询所有客户
+     * @return
+     */
+    @Select("select * from customer")
+    List<Customer> selectAll();
 }

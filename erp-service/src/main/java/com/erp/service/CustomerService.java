@@ -1,6 +1,7 @@
 package com.erp.service;
 
 import com.erp.entity.Customer;
+import com.erp.result.PageResult;
 
 public interface CustomerService {
 
@@ -28,4 +29,9 @@ public interface CustomerService {
      * @return
      */
     Customer getById(Integer id);
+
+    /**
+     * 分页查询客户
+     */
+    PageResult page(Integer pageNum, Integer pageSize);
 }

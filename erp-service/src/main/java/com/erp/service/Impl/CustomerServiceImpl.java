@@ -2,11 +2,15 @@ package com.erp.service.Impl;
 
 import com.erp.entity.Customer;
 import com.erp.mapper.CustomerMapper;
+import com.erp.result.PageResult;
 import com.erp.service.CustomerService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
@@ -45,5 +49,25 @@ public class CustomerServiceImpl implements CustomerService {
      */
     public Customer getById(Integer id) {
         return customerMapper.getById(id);
+    }
+
+    /**
+     * 分页查询客户
+     */
+    public PageResult page(Integer pageNum, Integer pageSize) {
+
+        //设置分页参数
+        PageHelper.startPage(pageNum, pageSize);
+
+        //执行查询
+        List<Customer> customersList = customerMapper.selectAll();
+
+        //用PageHelper提供的PageInfo封装类封装查询结果，获取总记录数等信息
+        PageInfo<Customer> pageInfo = new PageInfo<>(customersList);
+
+        //转换为自定义封装类PageResult
+        PageResult pageResult = new PageResult(pageInfo.getTotal(), pageInfo.getList());
+
+        return pageResult;
     }
 }

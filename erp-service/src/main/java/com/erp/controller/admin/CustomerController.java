@@ -1,6 +1,7 @@
 package com.erp.controller.admin;
 
 import com.erp.entity.Customer;
+import com.erp.result.PageResult;
 import com.erp.result.Result;
 import com.erp.service.CustomerService;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,16 @@ public class CustomerController {
     public Result<Customer> getById(@PathVariable Integer id){
         log.info("查询单个客户:{}", id);
         return Result.success(customerService.getById(id));
+    }
+
+    /**
+     * 分页查询客户
+     */
+    @GetMapping("/customers/page")
+    public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
+                      @RequestParam(defaultValue = "10") Integer pageSize){
+        PageResult pageResult = customerService.page(pageNum, pageSize);
+        return Result.success(pageResult);
     }
 
 }
