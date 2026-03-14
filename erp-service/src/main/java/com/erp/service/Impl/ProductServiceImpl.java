@@ -3,11 +3,15 @@ package com.erp.service.Impl;
 
 import com.erp.entity.Product;
 import com.erp.mapper.ProductMapper;
+import com.erp.result.PageResult;
 import com.erp.service.ProductService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -49,5 +53,25 @@ public class ProductServiceImpl implements ProductService {
      */
     public Product getById(Integer id) {
         return productMapper.getById(id);
+    }
+
+    /**
+     * 分页查询所有商品
+     */
+    public PageResult page(Integer pageNum, Integer pageSize) {
+
+        //设置分页参数
+        PageHelper.startPage(pageNum, pageSize);
+
+        //执行查询
+        List<Product> productList = productMapper.selectAll();
+
+        //用PageHelper提供的PageInfo封装类封装查询结果，获取总记录数等信息
+        PageInfo<Product> pageInfo = new PageInfo<>(productList);
+
+        //转换为自定义封装类PageResult
+        PageResult pageResult = new PageResult(pageInfo.getTotal(), pageInfo.getList());
+
+        return pageResult;
     }
 }

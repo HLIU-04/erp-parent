@@ -1,6 +1,7 @@
 package com.erp.service;
 
 import com.erp.entity.Product;
+import com.erp.result.PageResult;
 
 public interface ProductService {
 
@@ -28,4 +29,9 @@ public interface ProductService {
      * @return
      */
     Product getById(Integer id);
+
+    /**
+     * 分页查询所有商品信息
+     */
+    PageResult page(Integer pageNum, Integer pageSize);
 }

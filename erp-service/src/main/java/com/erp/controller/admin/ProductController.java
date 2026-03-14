@@ -1,6 +1,7 @@
 package com.erp.controller.admin;
 
 import com.erp.entity.Product;
+import com.erp.result.PageResult;
 import com.erp.result.Result;
 import com.erp.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
@@ -58,5 +59,15 @@ public class ProductController {
     public Result get(@PathVariable Integer id){
         log.info("查询商品信息:{}", id);
         return Result.success(productService.getById(id));
+    }
+
+    /**
+     * 查询所有商品信息
+     */
+    @GetMapping("/products/page")
+    public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
+                       @RequestParam(defaultValue = "10") Integer pageSize){
+        PageResult pageResult = productService.page(pageNum, pageSize);
+        return Result.success(pageResult);
     }
 }

@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface ProductMapper {
 
@@ -37,4 +39,11 @@ public interface ProductMapper {
      */
     @Select("select * from product where id = #{id}")
     Product getById(Integer id);
+
+    /**
+     * 查询所有商品
+     * @return
+     */
+    @Select("select * from product")
+    List<Product> selectAll();
 }
