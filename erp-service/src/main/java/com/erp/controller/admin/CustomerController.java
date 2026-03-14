@@ -50,4 +50,15 @@ public class CustomerController {
         return Result.success();
     }
 
+    /**
+     * 根据id查询客户
+     * @param
+     * @return
+     */
+    @GetMapping("/customers/{id}")
+    public Result<Customer> getById(@PathVariable Integer id){
+        log.info("查询单个客户:{}", id);
+        return Result.success(customerService.getById(id));
+    }
+
 }

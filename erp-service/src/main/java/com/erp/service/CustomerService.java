@@ -21,4 +21,11 @@ public interface CustomerService {
      * @param customer
      */
     void update(Customer customer);
+
+    /**
+     * 根据id查询客户
+     * @param id
+     * @return
+     */
+    Customer getById(Integer id);
 }

@@ -37,4 +37,13 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setUpdateTime(LocalDateTime.now());
         customerMapper.update(customer);
     }
+
+    /**
+     * 根据id查询客户
+     * @param id
+     * @return
+     */
+    public Customer getById(Integer id) {
+        return customerMapper.getById(id);
+    }
 }

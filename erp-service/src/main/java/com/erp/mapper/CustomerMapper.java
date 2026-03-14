@@ -4,6 +4,7 @@ import com.erp.entity.Customer;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface CustomerMapper {
@@ -28,4 +29,12 @@ public interface CustomerMapper {
      * @param customer
      */
     void update(Customer customer);
+
+    /**
+     * 根据id查询客户
+     * @param id
+     * @return
+     */
+    @Select("select * from customer where id = #{id}")
+    Customer getById(Integer id);
 }
