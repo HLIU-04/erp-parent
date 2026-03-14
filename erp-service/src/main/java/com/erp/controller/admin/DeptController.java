@@ -1,6 +1,7 @@
 package com.erp.controller.admin;
 
 import com.erp.entity.Dept;
+import com.erp.result.PageResult;
 import com.erp.result.Result;
 import com.erp.service.DeptService;
 import lombok.extern.slf4j.Slf4j;
@@ -59,5 +60,15 @@ public class DeptController {
     public Result<Dept> getById(@PathVariable Integer id){
         log.info("查询单个部门:{}", id);
         return Result.success(deptService.getById(id));
+    }
+
+    /**
+     * 分页查询部门
+     */
+    @GetMapping("/depts/page")
+    public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
+                       @RequestParam(defaultValue = "10") Integer pageSize){
+        PageResult pageResult = deptService.page(pageNum, pageSize);
+        return Result.success(pageResult);
     }
 }

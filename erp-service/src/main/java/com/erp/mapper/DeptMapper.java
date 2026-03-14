@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface DeptMapper {
 
@@ -37,4 +39,11 @@ public interface DeptMapper {
      */
     @Select("select * from dept where id = #{id}")
     Dept getById(Integer id);
+
+    /**
+     * 查询所有部门
+     * @return
+     */
+    @Select("select * from dept")
+    List<Dept> selectAll();
 }

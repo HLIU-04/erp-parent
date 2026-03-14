@@ -1,6 +1,7 @@
 package com.erp.service;
 
 import com.erp.entity.Dept;
+import com.erp.result.PageResult;
 
 public interface DeptService {
 
@@ -28,4 +29,9 @@ public interface DeptService {
      * @return
      */
     Dept getById(Integer id);
+
+    /**
+     * 分页查询部门
+     */
+    PageResult page(Integer pageNum, Integer pageSize);
 }
