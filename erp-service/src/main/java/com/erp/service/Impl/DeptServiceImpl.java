@@ -23,4 +23,12 @@ public class DeptServiceImpl implements DeptService {
         dept.setUpdateTime(LocalDateTime.now());
         deptMapper.add(dept);
     }
+
+    /**
+     * 根据id删除部门
+     * @param id
+     */
+    public void deleteById(Integer id) {
+        deptMapper.deleteById(id);
+    }
 }
