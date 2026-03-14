@@ -4,6 +4,7 @@ import com.erp.entity.Dept;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface DeptMapper {
@@ -28,4 +29,12 @@ public interface DeptMapper {
      * @param dept
      */
     void update(Dept dept);
+
+    /**
+     * 根据id查询部门
+     * @param id
+     * @return
+     */
+    @Select("select * from dept where id = #{id}")
+    Dept getById(Integer id);
 }

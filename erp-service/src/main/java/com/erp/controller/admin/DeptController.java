@@ -49,4 +49,15 @@ public class DeptController {
         deptService.update(dept);
         return Result.success();
     }
+
+    /**
+     * 根据id查询部门
+     * @param id
+     * @return
+     */
+    @GetMapping("/depts/{id}")
+    public Result<Dept> getById(@PathVariable Integer id){
+        log.info("查询单个部门:{}", id);
+        return Result.success(deptService.getById(id));
+    }
 }
