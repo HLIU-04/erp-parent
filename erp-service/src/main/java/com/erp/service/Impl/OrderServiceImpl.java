@@ -8,6 +8,7 @@ import com.erp.mapper.*;
 import com.erp.service.OrderService;
 import com.erp.vo.OrderItemVO;
 import com.erp.vo.admin.AdminOrderDetailVO;
+import com.erp.vo.employee.EmployeeOrderDetailVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,7 +124,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 根据id查询订单信息
+     * 管理员根据id查询订单信息
      * @param id
      */
     public AdminOrderDetailVO getAdminOrderDetailById(Integer id) {
@@ -161,5 +162,30 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return vo;
+    }
+
+    /**
+     * 员工根据id查询订单信息
+     * @param id
+     */
+    public EmployeeOrderDetailVO getEmployeeOrderDetailById(Integer id) {
+        // 1. 查询订单主表
+        SaleOrder order = orderMapper.getById(id);
+        if (order == null) {
+            throw new OrderNotFoundException("订单不存在");
+        }
+
+        // 2. 查询商品明细（复用已有的 selectItemsByOrderId）
+        List<OrderItemVO> items = orderDetailMapper.selectItemsByOrderId(id);
+
+        // 3. 组装
+        return EmployeeOrderDetailVO.builder()
+                .orderNo(order.getOrderNo())
+                .saleTime(order.getSaleTime())
+                .totalAmount(order.getTotalAmount())
+                .actualAmount(order.getActualAmount())
+                .payMethod(order.getPayMethod())
+                .items(items)
+                .build();
     }
 }

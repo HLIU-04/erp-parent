@@ -10,6 +10,7 @@
                 (#{item.orderId}, #{item.productId}, #{item.quantity}, #{item.unitPrice}, #{item.totalPrice},#{item.createTime}, #{item.updateTime})
             </foreach>
     </insert>
+
     <select id="selectItemsByOrderId" resultType="com.erp.vo.OrderItemVO">
         SELECT
             d.product_id AS productId,
