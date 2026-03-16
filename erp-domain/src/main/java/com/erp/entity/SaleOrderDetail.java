@@ -17,7 +17,7 @@ public class SaleOrderDetail {
 
     private Integer id;
 
-    private Integer OrderId;
+    private Integer orderId;
 
     private Integer productId;
 

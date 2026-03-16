@@ -3,4 +3,10 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.erp.mapper.OrderMapper">
 
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into sale_order (order_no, customer_id, operator_id, dept_id, total_amount, actual_amount,
+                                pay_method, status, sale_time, remark, create_time, update_time)
+        values (#{orderNo}, #{customerId}, #{operatorId}, #{deptId}, #{totalAmount}, #{actualAmount},
+                #{payMethod}, #{status}, #{saleTime}, #{remark}, #{createTime}, #{updateTime})
+    </insert>
 </mapper>
