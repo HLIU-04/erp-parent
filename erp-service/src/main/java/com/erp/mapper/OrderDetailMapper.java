@@ -1,6 +1,7 @@
 package com.erp.mapper;
 
 import com.erp.entity.SaleOrderDetail;
+import com.erp.vo.OrderItemVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -21,4 +22,10 @@ public interface OrderDetailMapper {
      * 插入订单明细
      */
     int insertBatch(List<SaleOrderDetail> details);
+
+    /**
+     * 根据订单id查询订单明细
+     * @param id
+     */
+    List<OrderItemVO> selectItemsByOrderId(Integer id);
 }

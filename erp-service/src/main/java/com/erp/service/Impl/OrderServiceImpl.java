@@ -2,14 +2,14 @@ package com.erp.service.Impl;
 
 import com.erp.dto.OrderDetailDTO;
 import com.erp.dto.OrderSubmitDTO;
-import com.erp.entity.SaleOrder;
-import com.erp.entity.SaleOrderDetail;
+import com.erp.entity.*;
 import com.erp.exception.OrderNotFoundException;
-import com.erp.mapper.OrderDetailMapper;
-import com.erp.mapper.OrderMapper;
-import com.erp.mapper.ProductMapper;
+import com.erp.mapper.*;
 import com.erp.service.OrderService;
+import com.erp.vo.OrderItemVO;
+import com.erp.vo.admin.AdminOrderDetailVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +31,12 @@ public class OrderServiceImpl implements OrderService {
     private OrderDetailMapper orderDetailMapper;
     @Autowired
     private ProductMapper productMapper;
+    @Autowired
+    private CustomerMapper customerMapper;
+    @Autowired
+    private EmployeeMapper employeeMapper;
+    @Autowired
+    private DeptMapper deptMapper;
 
     /**
      * 根据id删除订单
@@ -114,5 +120,46 @@ public class OrderServiceImpl implements OrderService {
         }
 
         log.info("订单提交成功，订单号：{}，订单ID：{}", orderNo, orderId);
+    }
+
+    /**
+     * 根据id查询订单信息
+     * @param id
+     */
+    public AdminOrderDetailVO getAdminOrderDetailById(Integer id) {
+        // 1. 查询订单主表
+        SaleOrder order = orderMapper.getById(id);
+        if (order == null) {
+            throw new OrderNotFoundException("订单不存在，id: " + id);
+        }
+
+        // 2. 查询明细列表（含商品名称）
+        List<OrderItemVO> items = orderDetailMapper.selectItemsByOrderId(id);
+
+        // 3. 组装 VO
+        AdminOrderDetailVO vo = new AdminOrderDetailVO();
+        // 复制同名属性（id, orderNo, customerId, operatorId, deptId, totalAmount, actualAmount, payMethod, status, saleTime, remark）
+        BeanUtils.copyProperties(order, vo);
+        vo.setItems(items);
+
+        //补充客户姓名
+        if (order.getCustomerId() != null) {
+             Customer customer = customerMapper.getById(order.getCustomerId());
+             if (customer != null) vo.setCustomerName(customer.getName());
+        }
+
+        //补充员工姓名
+        if (order.getOperatorId() != null) {
+            Employee employee = employeeMapper.getById(order.getOperatorId());
+            if (employee != null) vo.setOperatorName(employee.getName());
+        }
+
+        //补充部门名称
+        if (order.getDeptId() != null) {
+            Dept dept = deptMapper.getById(order.getDeptId());
+            if (dept != null) vo.setDeptName(dept.getName());
+        }
+
+        return vo;
     }
 }

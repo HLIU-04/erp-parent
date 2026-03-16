@@ -10,4 +10,15 @@
                 (#{item.orderId}, #{item.productId}, #{item.quantity}, #{item.unitPrice}, #{item.totalPrice},#{item.createTime}, #{item.updateTime})
             </foreach>
     </insert>
+    <select id="selectItemsByOrderId" resultType="com.erp.vo.OrderItemVO">
+        SELECT
+            d.product_id AS productId,
+            d.quantity,
+            d.unit_price AS unitPrice,
+            d.total_price AS totalPrice,
+            p.name AS productName
+        FROM sale_order_detail d
+                 LEFT JOIN product p ON d.product_id = p.id
+        WHERE d.order_id = #{orderId}
+    </select>
 </mapper>

@@ -56,7 +56,7 @@ public class ProductController {
      * @param id
      */
     @GetMapping("/products/{id}")
-    public Result get(@PathVariable Integer id){
+    public Result getById(@PathVariable Integer id){
         log.info("查询商品信息:{}", id);
         return Result.success(productService.getById(id));
     }
