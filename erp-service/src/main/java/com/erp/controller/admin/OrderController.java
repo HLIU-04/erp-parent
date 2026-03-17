@@ -1,5 +1,6 @@
 package com.erp.controller.admin;
 
+import com.erp.dto.OrderUpdateDTO;
 import com.erp.result.Result;
 import com.erp.service.OrderService;
 import com.erp.vo.admin.AdminOrderDetailVO;
@@ -35,5 +36,16 @@ public class OrderController {
         log.info("查询订单信息:{}", id);
         AdminOrderDetailVO orderDetailVO = orderService.getAdminOrderDetailById(id);
         return Result.success(orderDetailVO);
+    }
+
+    /**
+     * 修改订单和订单明细
+     * @param orderUpdateDTO
+     */
+    @PutMapping("/orders")
+    public Result update(@RequestBody OrderUpdateDTO orderUpdateDTO){
+        log.info("修改订单:{}", orderUpdateDTO);
+        orderService.update(orderUpdateDTO);
+        return Result.success();
     }
 }

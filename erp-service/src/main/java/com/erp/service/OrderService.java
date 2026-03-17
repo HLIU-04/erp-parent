@@ -1,6 +1,7 @@
 package com.erp.service;
 
 import com.erp.dto.OrderSubmitDTO;
+import com.erp.dto.OrderUpdateDTO;
 import com.erp.entity.SaleOrder;
 import com.erp.vo.admin.AdminOrderDetailVO;
 import com.erp.vo.employee.EmployeeOrderDetailVO;
@@ -32,4 +33,10 @@ public interface OrderService {
      * @return
      */
     EmployeeOrderDetailVO getEmployeeOrderDetailById(Integer id);
+
+    /**
+     * 修改订单信息
+     * @param orderUpdateDTO
+     */
+    void update(OrderUpdateDTO orderUpdateDTO);
 }

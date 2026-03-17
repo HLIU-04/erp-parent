@@ -27,4 +27,10 @@ public interface OrderMapper {
      */
     @Select("select * from sale_order where id = #{id}")
     SaleOrder getById(Integer id);
+
+    /**
+     * 动态更新
+     * @param orderUpdate
+     */
+    void update(SaleOrder orderUpdate);
 }

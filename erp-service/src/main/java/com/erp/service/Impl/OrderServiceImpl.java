@@ -2,6 +2,7 @@ package com.erp.service.Impl;
 
 import com.erp.dto.OrderDetailDTO;
 import com.erp.dto.OrderSubmitDTO;
+import com.erp.dto.OrderUpdateDTO;
 import com.erp.entity.*;
 import com.erp.exception.OrderNotFoundException;
 import com.erp.mapper.*;
@@ -31,8 +32,6 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderDetailMapper orderDetailMapper;
     @Autowired
-    private ProductMapper productMapper;
-    @Autowired
     private CustomerMapper customerMapper;
     @Autowired
     private EmployeeMapper employeeMapper;
@@ -56,7 +55,6 @@ public class OrderServiceImpl implements OrderService {
         if (rows == 0){
             throw new OrderNotFoundException("订单不存在");
         }
-
     }
 
     /**
@@ -187,5 +185,66 @@ public class OrderServiceImpl implements OrderService {
                 .payMethod(order.getPayMethod())
                 .items(items)
                 .build();
+    }
+
+    /**
+     * 修改订单
+     * @param orderUpdateDTO
+     */
+    @Transactional
+    public void update(OrderUpdateDTO orderUpdateDTO) {
+        Integer orderId = orderUpdateDTO.getId();
+
+        //1.检查订单是否存在
+        SaleOrder order = orderMapper.getById(orderId);
+        if (order == null) {
+            throw new OrderNotFoundException("订单不存在,id:" + orderId);
+        }
+
+        //2.更新主表字段
+        SaleOrder orderUpdate = SaleOrder.builder()
+                .id(orderId)
+                .customerId(orderUpdateDTO.getCustomerId())
+                .actualAmount(orderUpdateDTO.getActualAmount())
+                .payMethod(orderUpdateDTO.getPayMethod())
+                .remark(orderUpdateDTO.getRemark())
+                .updateTime(LocalDateTime.now())
+                .build();
+
+        //3.处理明细覆盖
+        List<OrderDetailDTO> details = orderUpdateDTO.getDetails();
+        if (details != null && !details.isEmpty()) {
+            //3.1 删除所有明细
+            orderDetailMapper.deleteByOrderId(orderId);
+
+            //3.2 计算新明细和
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            List<SaleOrderDetail> detailList = new ArrayList<>();
+            for (OrderDetailDTO detailDTO : details) {
+                BigDecimal subTotal = detailDTO.getQuantity().multiply(detailDTO.getUnitPrice());
+                totalAmount = totalAmount.add(subTotal);
+
+                SaleOrderDetail detail = SaleOrderDetail.builder()
+                        .orderId(orderId)
+                        .productId(detailDTO.getProductId())
+                        .quantity(detailDTO.getQuantity())
+                        .unitPrice(detailDTO.getUnitPrice())
+                        .totalPrice(subTotal)
+                        .createTime(LocalDateTime.now())
+                        .updateTime(LocalDateTime.now())
+                        .build();
+                detailList.add(detail);
+            }
+
+            //3.3 插入新明细
+            if (!detailList.isEmpty()){
+                orderDetailMapper.insertBatch(detailList);
+            }
+
+            //将新计算的totalAmount设置给orderUpdate
+            orderUpdate.setTotalAmount(totalAmount);
+        }
+        //4. 更新主表
+        orderMapper.update(orderUpdate);
     }
 }

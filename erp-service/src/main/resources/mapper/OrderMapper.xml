@@ -9,4 +9,28 @@
         values (#{orderNo}, #{customerId}, #{operatorId}, #{deptId}, #{totalAmount}, #{actualAmount},
                 #{payMethod}, #{status}, #{saleTime}, #{remark}, #{createTime}, #{updateTime})
     </insert>
+    <update id="update">
+        update sale_order
+        <set>
+            <if test="customerId != null">
+                customer_id = #{customerId},
+            </if>
+            <if test="actualAmount != null">
+                actual_amount = #{actualAmount},
+            </if>
+            <if test="payMethod != null">
+                pay_method = #{payMethod},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            <if test="totalAmount != null">
+                total_amount = #{totalAmount},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
 </mapper>
