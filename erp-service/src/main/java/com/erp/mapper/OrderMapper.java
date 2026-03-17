@@ -1,9 +1,13 @@
 package com.erp.mapper;
 
+import com.erp.dto.OrderPageQueryDTO;
 import com.erp.entity.SaleOrder;
+import com.erp.vo.OrderPageVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 @Mapper
 public interface OrderMapper {
@@ -33,4 +37,11 @@ public interface OrderMapper {
      * @param orderUpdate
      */
     void update(SaleOrder orderUpdate);
+
+    /**
+     * 分页查询
+     * @param orderPageQueryDTO
+     * @return
+     */
+    List<OrderPageVO> pageQuery(OrderPageQueryDTO orderPageQueryDTO);
 }

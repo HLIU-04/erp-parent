@@ -1,6 +1,8 @@
 package com.erp.controller.employee;
 
+import com.erp.dto.OrderPageQueryDTO;
 import com.erp.dto.OrderSubmitDTO;
+import com.erp.result.PageResult;
 import com.erp.result.Result;
 import com.erp.service.OrderService;
 import com.erp.vo.employee.EmployeeOrderDetailVO;
@@ -35,5 +37,17 @@ public class OrderController {
     public Result<EmployeeOrderDetailVO> getOrderDetail(@PathVariable Integer id){
         EmployeeOrderDetailVO orderDetailVO = orderService.getEmployeeOrderDetailById(id);
         return Result.success(orderDetailVO);
+    }
+
+    /**
+     * 分页条件查询订单
+     * @param orderPageQueryDTO
+     * @return
+     */
+    @GetMapping("/orders/page")
+    public Result<PageResult> page(OrderPageQueryDTO orderPageQueryDTO){
+        log.info("分页条件查询订单:{}", orderPageQueryDTO);
+        PageResult pageResult = orderService.pageQuery(orderPageQueryDTO);
+        return Result.success(pageResult);
     }
 }

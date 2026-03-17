@@ -1,6 +1,8 @@
 package com.erp.controller.admin;
 
+import com.erp.dto.OrderPageQueryDTO;
 import com.erp.dto.OrderUpdateDTO;
+import com.erp.result.PageResult;
 import com.erp.result.Result;
 import com.erp.service.OrderService;
 import com.erp.vo.admin.AdminOrderDetailVO;
@@ -47,5 +49,17 @@ public class OrderController {
         log.info("修改订单:{}", orderUpdateDTO);
         orderService.update(orderUpdateDTO);
         return Result.success();
+    }
+
+    /**
+     * 分页条件查询订单
+     * @param orderPageQueryDTO
+     * @return
+     */
+    @GetMapping("/orders/page")
+    public Result<PageResult> page(OrderPageQueryDTO orderPageQueryDTO){
+        log.info("分页条件查询订单:{}", orderPageQueryDTO);
+        PageResult pageResult = orderService.pageQuery(orderPageQueryDTO);
+        return Result.success(pageResult);
     }
 }

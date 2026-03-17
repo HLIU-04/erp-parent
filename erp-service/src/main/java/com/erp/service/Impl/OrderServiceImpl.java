@@ -1,15 +1,20 @@
 package com.erp.service.Impl;
 
 import com.erp.dto.OrderDetailDTO;
+import com.erp.dto.OrderPageQueryDTO;
 import com.erp.dto.OrderSubmitDTO;
 import com.erp.dto.OrderUpdateDTO;
 import com.erp.entity.*;
 import com.erp.exception.OrderNotFoundException;
 import com.erp.mapper.*;
+import com.erp.result.PageResult;
 import com.erp.service.OrderService;
 import com.erp.vo.OrderItemVO;
+import com.erp.vo.OrderPageVO;
 import com.erp.vo.admin.AdminOrderDetailVO;
 import com.erp.vo.employee.EmployeeOrderDetailVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -246,5 +251,27 @@ public class OrderServiceImpl implements OrderService {
         }
         //4. 更新主表
         orderMapper.update(orderUpdate);
+    }
+
+    /**
+     * 分页条件查询订单
+     * @param orderPageQueryDTO
+     * @return
+     */
+    public PageResult pageQuery(OrderPageQueryDTO orderPageQueryDTO) {
+
+        //设置分页参数
+        PageHelper.startPage(orderPageQueryDTO.getPageNum(), orderPageQueryDTO.getPageSize());
+
+        //执行查询
+        List<OrderPageVO> list = orderMapper.pageQuery(orderPageQueryDTO);
+
+        //用PageHelper提供的PageInfo封装类封装查询结果，获取总记录数等信息
+        PageInfo<OrderPageVO> pageInfo = new PageInfo<>(list);
+
+        //封装VO
+        PageResult pageResult = new PageResult(pageInfo.getTotal(), pageInfo.getList());
+
+        return pageResult;
     }
 }
