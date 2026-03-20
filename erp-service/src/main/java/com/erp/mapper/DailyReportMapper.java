@@ -29,4 +29,12 @@ public interface DailyReportMapper {
      * @return
      */
     int update(DailyReport report);
+
+    /**
+     * 根据ID查询日报
+     * @param id
+     * @return
+     */
+    @Select("select * from daily_report where id = #{id}")
+    DailyReport selectById(Integer id);
 }

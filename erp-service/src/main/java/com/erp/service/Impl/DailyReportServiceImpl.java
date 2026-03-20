@@ -4,12 +4,15 @@ import com.erp.dto.DailyReportDeliveryDTO;
 import com.erp.dto.DailyReportRemainingDTO;
 import com.erp.entity.DailyReport;
 import com.erp.entity.DailyReportItem;
+import com.erp.entity.Dept;
 import com.erp.entity.Product;
 import com.erp.exception.BusinessException;
 import com.erp.mapper.DailyReportItemMapper;
 import com.erp.mapper.DailyReportMapper;
+import com.erp.mapper.DeptMapper;
 import com.erp.mapper.ProductMapper;
 import com.erp.service.DailyReportService;
+import com.erp.vo.DailyReportDetailVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,8 @@ public class DailyReportServiceImpl implements DailyReportService {
     private ProductMapper productMapper;
     @Autowired
     private DailyReportItemMapper dailyReportItemMapper;
+    @Autowired
+    private DeptMapper deptMapper;
 
     /**
      * 添加日报发货信息
@@ -149,5 +154,59 @@ public class DailyReportServiceImpl implements DailyReportService {
         report.setTotalAmount(totalAmount);
         report.setUpdateTime(LocalDateTime.now());
         dailyReportMapper.update(report);
+    }
+
+    /**
+     * 根据ID查询日报详情
+     * @param id
+     * @return
+     */
+    public DailyReportDetailVO getReportDetailById(Integer id) {
+        //查询日报主表
+        DailyReport report = dailyReportMapper.selectById(id);
+        if (report == null) {
+            throw new BusinessException("日报不存在");
+        }
+
+        //查询日报明细
+        List<DailyReportItem> items = dailyReportItemMapper.selectByReportId(report.getId());
+
+        //查询部门名称
+        Dept dept = deptMapper.getById(report.getDeptId());
+        String deptName = dept != null ? dept.getName() : "未知部门";
+
+        //组装明细vo列表
+        List<DailyReportDetailVO.DailyReportItemVO> itemVOList = new ArrayList<>();
+        for (DailyReportItem item : items){
+            //查询商品名称
+            Product product = productMapper.getById(item.getProductId());
+            String productName = product != null ? product.getName() : "未知商品";
+
+            //计算发货金额和剩货金额
+            BigDecimal deliveryAmount = item.getDeliveryWeight().multiply(item.getUnitPrice());
+            BigDecimal remainingAmount = item.getRemainingWeight().multiply(item.getUnitPrice());
+
+            DailyReportDetailVO.DailyReportItemVO itemVO = DailyReportDetailVO.DailyReportItemVO.builder()
+                    .productId(item.getProductId())
+                    .productName(productName)
+                    .unitPrice(item.getUnitPrice())
+                    .deliveryWeight(item.getDeliveryWeight())
+                    .remainingWeight(item.getRemainingWeight())
+                    .deliveryAmount(deliveryAmount)
+                    .remainingAmount(remainingAmount)
+                    .sortOrder(item.getSortOrder())
+                    .build();
+            itemVOList.add(itemVO);
+        }
+
+        //组装返回结果
+        return DailyReportDetailVO.builder()
+                .id(report.getId())
+                .deliveryDate(report.getDeliveryDate())
+                .deptId(report.getDeptId())
+                .deptName(deptName)
+                .totalAmount(report.getTotalAmount())
+                .items(itemVOList)
+                .build();
     }
 }

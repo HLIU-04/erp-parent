@@ -2,6 +2,7 @@ package com.erp.service;
 
 import com.erp.dto.DailyReportDeliveryDTO;
 import com.erp.dto.DailyReportRemainingDTO;
+import com.erp.vo.DailyReportDetailVO;
 
 public interface DailyReportService {
 
@@ -16,4 +17,11 @@ public interface DailyReportService {
      * @param dailyReportRemainingDTO
      */
     void remaining(DailyReportRemainingDTO dailyReportRemainingDTO);
+
+    /**
+     * 根据ID查询日报信息
+     * @param id
+     * @return
+     */
+    DailyReportDetailVO getReportDetailById(Integer id);
 }
