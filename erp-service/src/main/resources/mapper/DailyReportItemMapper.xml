@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.erp.mapper.DailyReportItemMapper">
+
+    <insert id="insertOrUpdate">
+        insert into daily_report_item(report_id, product_id, unit_price, delivery_weight, remaining_weight, sort_order, create_time, update_time)
+        values (#{reportId}, #{productId}, #{unitPrice}, #{deliveryWeight}, #{remainingWeight}, #{sortOrder}, #{createTime}, #{updateTime})
+        ON DUPLICATE KEY UPDATE
+                             unit_price = VALUES(unit_price),
+                             delivery_weight = VALUES(delivery_weight),
+                             update_time = VALUES(update_time)
+    </insert>
+</mapper>
