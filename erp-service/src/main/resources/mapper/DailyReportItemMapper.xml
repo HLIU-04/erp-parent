@@ -11,4 +11,25 @@
                              delivery_weight = VALUES(delivery_weight),
                              update_time = VALUES(update_time)
     </insert>
+    <update id="update">
+        update daily_report_item
+        <set>
+            <if test="unitPrice != null">
+                unit_price = #{unitPrice},
+            </if>
+            <if test="deliveryWeight != null">
+                delivery_weight = #{deliveryWeight},
+            </if>
+            <if test="remainingWeight != null">
+                remaining_weight = #{remainingWeight},
+            </if>
+            <if test="sortOrder != null">
+                sort_order = #{sortOrder},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
 </mapper>

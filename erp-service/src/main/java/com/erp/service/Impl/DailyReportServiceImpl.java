@@ -1,6 +1,7 @@
 package com.erp.service.Impl;
 
 import com.erp.dto.DailyReportDeliveryDTO;
+import com.erp.dto.DailyReportRemainingDTO;
 import com.erp.entity.DailyReport;
 import com.erp.entity.DailyReportItem;
 import com.erp.entity.Product;
@@ -19,6 +20,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -94,5 +98,56 @@ public class DailyReportServiceImpl implements DailyReportService {
             dailyReportItemMapper.insertOrUpdate(item);
         }
         log.info("发货录入成功，日报ID：{}，商品数量：{}", report.getId(), itemList.size());
+    }
+
+    /**
+     * 添加日报结存信息
+     * @param dailyReportRemainingDTO
+     */
+    @Transactional
+    public void remaining(DailyReportRemainingDTO dailyReportRemainingDTO) {
+        Integer deptId = dailyReportRemainingDTO.getDeptId();
+        LocalDate deliveryDate = dailyReportRemainingDTO.getDeliveryDate();
+        List<DailyReportRemainingDTO.RemainingItemDTO> items = dailyReportRemainingDTO.getItems();
+
+        //1.查询日报主表
+        DailyReport report = dailyReportMapper.selectByDeptAndDate(deptId, deliveryDate);
+        if (report == null){
+            throw new BusinessException("未找到该日期的发货记录，请先录入发货");
+        }
+
+        //2.查询该日报的所有明细（为了计算营业额）
+        List<DailyReportItem> existingItems = dailyReportItemMapper.selectByReportId(report.getId());
+        //将明细转为map，方便按productId查询
+        Map<Integer, DailyReportItem> itemMap = existingItems.stream()
+                .collect(Collectors.toMap(DailyReportItem::getProductId, Function.identity()));
+
+        //3.更新剩货重量
+        for (DailyReportRemainingDTO.RemainingItemDTO dto : items){
+            Integer productId = dto.getProductId();
+            BigDecimal remainingWeight = dto.getRemainingWeight();
+            DailyReportItem item = itemMap.get(productId);
+            if (item == null){
+                throw new BusinessException("商品ID " + productId + " 未在发货记录中找到");
+            }
+            item.setRemainingWeight(remainingWeight);
+            item.setUpdateTime(LocalDateTime.now());
+            dailyReportItemMapper.update(item);
+        }
+
+        //4.重新计算营业额
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (DailyReportItem item : itemMap.values()){
+            BigDecimal weightDiff = item.getDeliveryWeight().subtract(item.getRemainingWeight());
+            BigDecimal amount = weightDiff.multiply(item.getUnitPrice());
+            totalAmount = totalAmount.add(amount);
+        }
+
+        log.info("计算出的总营业额：{}", totalAmount);
+
+        //5.更新主表
+        report.setTotalAmount(totalAmount);
+        report.setUpdateTime(LocalDateTime.now());
+        dailyReportMapper.update(report);
     }
 }

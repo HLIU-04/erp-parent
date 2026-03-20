@@ -7,4 +7,14 @@
         insert into daily_report (dept_id, delivery_date, total_amount, create_time, update_time)
         values (#{deptId}, #{deliveryDate}, #{totalAmount}, #{createTime}, #{updateTime})
     </insert>
+    <update id="update">
+        update daily_report
+        <set>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="deliveryDate != null">delivery_date = #{deliveryDate},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        where id = #{id}
+    </update>
 </mapper>

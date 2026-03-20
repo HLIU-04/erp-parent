@@ -22,4 +22,11 @@ public interface DailyReportMapper {
      * @param report
      */
     void insert(DailyReport report);
+
+    /**
+     * 修改日报
+     * @param report
+     * @return
+     */
+    int update(DailyReport report);
 }
