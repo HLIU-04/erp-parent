@@ -2,6 +2,7 @@ package com.erp.service.Impl;
 
 import com.erp.dto.DailyReportDeliveryDTO;
 import com.erp.dto.DailyReportRemainingDTO;
+import com.erp.dto.DailyReportUpdateDTO;
 import com.erp.entity.DailyReport;
 import com.erp.entity.DailyReportItem;
 import com.erp.entity.Dept;
@@ -256,5 +257,50 @@ public class DailyReportServiceImpl implements DailyReportService {
 
         // 5. 返回 PageResult（包含 total 和 records）
         return new PageResult(pageInfo.getTotal(), voList);
+    }
+
+    /**
+     * 修改日报
+     * @param id
+     * @param dailyReportUpdateDTO
+     */
+    @Transactional
+    public void update(Integer id, DailyReportUpdateDTO dailyReportUpdateDTO) {
+
+        //查询日报是否存在
+        DailyReport report = dailyReportMapper.selectById(id);
+        if (report == null){
+            throw new BusinessException("日报不存在");
+        }
+
+        //删除原明细
+        dailyReportItemMapper.deleteByReportId(id);
+
+        //插入新明细并重新计算总营业额
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (DailyReportUpdateDTO.DailyReportItemUpdateDTO itemDTO : dailyReportUpdateDTO.getItems()){
+            //插入明细
+            DailyReportItem item = DailyReportItem.builder()
+                    .reportId(id)
+                    .productId(itemDTO.getProductId())
+                    .unitPrice(itemDTO.getUnitPrice())
+                    .deliveryWeight(itemDTO.getDeliveryWeight())
+                    .remainingWeight(itemDTO.getRemainingWeight())
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .build();
+                    dailyReportItemMapper.insertOrUpdate(item);
+
+                    //计算该商品的营业额
+                    BigDecimal turnover = item.getDeliveryWeight()
+                        .subtract(item.getRemainingWeight())
+                        .multiply(item.getUnitPrice());
+                    totalAmount = totalAmount.add(turnover);
+        }
+
+        //更新主表营业额
+        report.setTotalAmount(totalAmount);
+        report.setUpdateTime(LocalDateTime.now());
+        dailyReportMapper.update(report);
     }
 }

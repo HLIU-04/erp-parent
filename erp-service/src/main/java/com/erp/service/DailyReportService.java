@@ -2,6 +2,7 @@ package com.erp.service;
 
 import com.erp.dto.DailyReportDeliveryDTO;
 import com.erp.dto.DailyReportRemainingDTO;
+import com.erp.dto.DailyReportUpdateDTO;
 import com.erp.result.PageResult;
 import com.erp.vo.DailyReportDetailVO;
 
@@ -38,4 +39,11 @@ public interface DailyReportService {
      * @return
      */
     PageResult pageQuery(Integer pageNum, Integer pageSize, Integer deptId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 修改日报信息
+     * @param id
+     * @param dailyReportUpdateDTO
+     */
+    void update(Integer id, DailyReportUpdateDTO dailyReportUpdateDTO);
 }
