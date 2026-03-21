@@ -2,7 +2,10 @@ package com.erp.service;
 
 import com.erp.dto.DailyReportDeliveryDTO;
 import com.erp.dto.DailyReportRemainingDTO;
+import com.erp.result.PageResult;
 import com.erp.vo.DailyReportDetailVO;
+
+import java.time.LocalDate;
 
 public interface DailyReportService {
 
@@ -24,4 +27,15 @@ public interface DailyReportService {
      * @return
      */
     DailyReportDetailVO getReportDetailById(Integer id);
+
+    /**
+     * 分页查询日报
+     * @param pageNum
+     * @param pageSize
+     * @param deptId
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    PageResult pageQuery(Integer pageNum, Integer pageSize, Integer deptId, LocalDate startDate, LocalDate endDate);
 }

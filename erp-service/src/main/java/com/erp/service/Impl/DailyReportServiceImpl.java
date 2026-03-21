@@ -11,8 +11,12 @@ import com.erp.mapper.DailyReportItemMapper;
 import com.erp.mapper.DailyReportMapper;
 import com.erp.mapper.DeptMapper;
 import com.erp.mapper.ProductMapper;
+import com.erp.result.PageResult;
 import com.erp.service.DailyReportService;
 import com.erp.vo.DailyReportDetailVO;
+import com.erp.vo.DailyReportPageVO;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -208,5 +212,49 @@ public class DailyReportServiceImpl implements DailyReportService {
                 .totalAmount(report.getTotalAmount())
                 .items(itemVOList)
                 .build();
+    }
+
+    /**
+     * 分页查询
+     * @param pageNum
+     * @param pageSize
+     * @param deptId
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public PageResult pageQuery(Integer pageNum, Integer pageSize, Integer deptId, LocalDate startDate, LocalDate endDate) {
+
+        // TODO: 后续登录功能完成后，应从当前登录员工获取部门ID，不再依赖前端传入
+
+        //开启分页
+        PageHelper.startPage(pageNum, pageSize);
+
+        //查询主表主句
+        List<DailyReport> reportList =dailyReportMapper.selectPage(deptId, startDate, endDate);
+
+        //用PageInfo包装，获取分页信息
+        PageInfo<DailyReport> pageInfo = new PageInfo<>(reportList);
+
+        //转换为vo列表
+        List<DailyReportPageVO> voList = reportList.stream()
+                .map(report -> {
+
+                    Dept dept = deptMapper.getById(report.getDeptId());
+
+                    String deptName = (dept != null) ? dept.getName() : "未知部门";
+
+                    return DailyReportPageVO.builder()
+                            .id(report.getId())
+                            .deliveryDate(report.getDeliveryDate())
+                            .deptId(report.getDeptId())
+                            .deptName(deptName)
+                            .totalAmount(report.getTotalAmount())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        // 5. 返回 PageResult（包含 total 和 records）
+        return new PageResult(pageInfo.getTotal(), voList);
     }
 }

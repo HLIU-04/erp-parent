@@ -17,4 +17,21 @@
         </set>
         where id = #{id}
     </update>
+
+    <select id="selectPage" resultType="com.erp.entity.DailyReport">
+        select *
+        from daily_report
+        <where>
+            <if test="deptId != null">
+                and dept_id = #{deptId}
+            </if>
+            <if test="startDate != null">
+                and delivery_date >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                and delivery_date &lt;= #{endDate}
+            </if>
+        </where>
+        order by delivery_date desc
+    </select>
 </mapper>

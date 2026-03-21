@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Mapper
 public interface DailyReportMapper {
@@ -37,4 +38,13 @@ public interface DailyReportMapper {
      */
     @Select("select * from daily_report where id = #{id}")
     DailyReport selectById(Integer id);
+
+    /**
+     * 分页查询日报
+     * @param deptId
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    List<DailyReport> selectPage(Integer deptId, LocalDate startDate, LocalDate endDate);
 }
