@@ -16,6 +16,7 @@ import com.erp.result.PageResult;
 import com.erp.service.DailyReportService;
 import com.erp.vo.DailyReportDetailVO;
 import com.erp.vo.DailyReportPageVO;
+import com.erp.vo.TurnoverStatVO;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -302,5 +303,23 @@ public class DailyReportServiceImpl implements DailyReportService {
         report.setTotalAmount(totalAmount);
         report.setUpdateTime(LocalDateTime.now());
         dailyReportMapper.update(report);
+    }
+
+    /**
+     * 根据日期范围查询营业额
+     * @param startDate
+     * @param endDate
+     * @param deptId
+     * @return
+     */
+    public List<TurnoverStatVO> getTurnoverByDateRange(LocalDate startDate, LocalDate endDate, Integer deptId) {
+
+        List<DailyReport> reportList = dailyReportMapper.selectTurnoverByDateRange(startDate, endDate, deptId);
+        return reportList.stream()
+                .map(report -> TurnoverStatVO.builder()
+                        .date(report.getDeliveryDate())
+                        .totalAmount(report.getTotalAmount())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

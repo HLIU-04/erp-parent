@@ -5,8 +5,10 @@ import com.erp.dto.DailyReportRemainingDTO;
 import com.erp.dto.DailyReportUpdateDTO;
 import com.erp.result.PageResult;
 import com.erp.vo.DailyReportDetailVO;
+import com.erp.vo.TurnoverStatVO;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface DailyReportService {
 
@@ -46,4 +48,13 @@ public interface DailyReportService {
      * @param dailyReportUpdateDTO
      */
     void update(Integer id, DailyReportUpdateDTO dailyReportUpdateDTO);
+
+    /**
+     * 根据日期范围查询营业额
+     * @param startDate
+     * @param endDate
+     * @param deptId
+     * @return
+     */
+    List<TurnoverStatVO> getTurnoverByDateRange(LocalDate startDate, LocalDate endDate, Integer deptId);
 }

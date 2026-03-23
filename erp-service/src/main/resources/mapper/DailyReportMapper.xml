@@ -34,4 +34,14 @@
         </where>
         order by delivery_date desc
     </select>
+
+    <select id="selectTurnoverByDateRange" resultType="com.erp.entity.DailyReport">
+        select delivery_date, total_amount
+        from daily_report
+        where delivery_date between #{startDate} and #{endDate}
+        <if test ="deptId != null">
+            and dept_id = #{deptId}
+        </if>
+        order by delivery_date asc
+    </select>
 </mapper>

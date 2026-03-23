@@ -47,4 +47,13 @@ public interface DailyReportMapper {
      * @return
      */
     List<DailyReport> selectPage(Integer deptId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 根据日期范围查询营业额
+     * @param startDate
+     * @param endDate
+     * @param deptId
+     * @return
+     */
+    List<DailyReport> selectTurnoverByDateRange(LocalDate startDate, LocalDate endDate, Integer deptId);
 }
