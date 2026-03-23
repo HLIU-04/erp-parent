@@ -7,6 +7,7 @@
         insert into daily_report (dept_id, delivery_date, total_amount, create_time, update_time)
         values (#{deptId}, #{deliveryDate}, #{totalAmount}, #{createTime}, #{updateTime})
     </insert>
+
     <update id="update">
         update daily_report
         <set>
@@ -43,5 +44,17 @@
             and dept_id = #{deptId}
         </if>
         order by delivery_date asc
+    </select>
+
+    <select id="selectDeptTurnoverByDateRange" resultType="com.erp.vo.TurnoverStatVO">
+        select
+            d.id as deptId,
+            d.name as deptName,
+            sum(r.total_amount) as totalAmount
+        from daily_report r
+        left join dept d on r.dept_id = d.id
+        where r.delivery_date between #{startDate} and #{endDate}
+        group by d.id, d.name
+        order by totalAmount desc
     </select>
 </mapper>

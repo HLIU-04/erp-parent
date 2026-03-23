@@ -57,4 +57,12 @@ public interface DailyReportService {
      * @return
      */
     List<TurnoverStatVO> getTurnoverByDateRange(LocalDate startDate, LocalDate endDate, Integer deptId);
+
+    /**
+     * 根据日期范围查询各部门营业额
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    List<TurnoverStatVO> getDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate);
 }

@@ -322,4 +322,15 @@ public class DailyReportServiceImpl implements DailyReportService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    /**
+     * 根据日期范围查询各部门营业额
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public List<TurnoverStatVO> getDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate) {
+
+        return dailyReportMapper.selectDeptTurnoverByDateRange(startDate, endDate);
+    }
 }
