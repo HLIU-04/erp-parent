@@ -34,4 +34,12 @@ public interface EmployeeService {
      * 分页查询员工
      */
     PageResult page(Integer pageNum, Integer pageSize);
+
+    /**
+     * 员工登录
+     * @param username
+     * @param password
+     * @return
+     */
+    Employee login(String username, String password);
 }

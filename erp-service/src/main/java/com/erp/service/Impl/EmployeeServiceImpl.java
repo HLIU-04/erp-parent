@@ -4,9 +4,11 @@ import com.erp.entity.Employee;
 import com.erp.mapper.EmployeeMapper;
 import com.erp.result.PageResult;
 import com.erp.service.EmployeeService;
+import com.erp.exception.LoginException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,6 +19,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private EmployeeMapper employeeMapper;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * 添加员工
@@ -72,5 +77,26 @@ public class EmployeeServiceImpl implements EmployeeService {
         PageResult pageResult = new PageResult(pageInfo.getTotal(), pageInfo.getList());
 
         return pageResult;
+    }
+
+    /**
+     * 员工登录
+     * @param username
+     * @param password
+     * @return
+     */
+    public Employee login(String username, String password) {
+
+        // 根据用户名查询员工
+        Employee employee = employeeMapper.selectByUsername(username);
+        if (employee == null) {
+            throw new LoginException("用户名不存在");
+        }
+
+        //验证密码
+        if (!passwordEncoder.matches(password, employee.getPassword())) {
+            throw new LoginException("密码错误");
+        }
+        return employee;
     }
 }

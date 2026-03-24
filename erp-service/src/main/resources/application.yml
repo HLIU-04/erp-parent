@@ -10,3 +10,7 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+jwt:
+  secret: HLIU-imut-food-erp-040225-super-secure-key-32bytes
+  expiration: 86400000

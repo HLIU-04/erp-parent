@@ -3,6 +3,7 @@ package com.erp.handler;
 import com.erp.exception.BaseException;
 import com.erp.result.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 

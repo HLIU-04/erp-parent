@@ -45,4 +45,12 @@ public interface EmployeeMapper {
      */
     @Select("select * from employee")
     List<Employee> selectAll();
+
+    /**
+     * 根据用户名查询员工
+     * @param username
+     * @return
+     */
+    @Select("select * from employee where username = #{username}")
+    Employee selectByUsername(String username);
 }
