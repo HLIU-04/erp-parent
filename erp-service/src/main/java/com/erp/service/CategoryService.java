@@ -33,5 +33,5 @@ public interface CategoryService {
     /**
      * 分页查询分类
      */
-    PageResult page(Integer pageNum, Integer pageSize);
+    PageResult page(Integer pageNum, Integer pageSize, String name);
 }

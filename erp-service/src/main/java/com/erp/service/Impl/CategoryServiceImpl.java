@@ -60,13 +60,13 @@ public class CategoryServiceImpl implements CategoryService {
      * 查询所有分类
      * @return
      */
-    public PageResult page(Integer pageNum, Integer pageSize) {
+    public PageResult page(Integer pageNum, Integer pageSize, String name) {
 
         //设置分页参数
         PageHelper.startPage(pageNum, pageSize);
 
         //执行查询
-        List<Category> categoryList = categoryMapper.selectAll();
+        List<Category> categoryList = categoryMapper.pageQuery(name);
 
         //用 PageHelper 提供的 PageInfo 封装类封装查询结果，获取总记录数等信息
         PageInfo<Category> pageInfo = new PageInfo<>(categoryList);

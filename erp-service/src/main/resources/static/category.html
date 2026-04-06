@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>分类管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .toolbar { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: #b22222; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .btn-link { background: transparent; color: #b22222; border: 1px solid #b22222; margin: 0 4px; padding: 2px 8px; cursor: pointer; }
+        .search-box input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .error-msg { color: red; margin-top: 10px; }
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination button { margin: 0 4px; padding: 4px 8px; cursor: pointer; }
+        .pagination .active { background: #b22222; color: white; border: none; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 20px; border-radius: 8px; width: 450px; max-width: 90%; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-buttons button { padding: 6px 12px; cursor: pointer; }
+        .btn-submit { background: #b22222; color: white; border: none; }
+        .btn-cancel { background: #ccc; border: none; }
+    </style>
+</head>
+<body>
+<div>
+    <div class="toolbar">
+        <div>
+            <button class="btn" id="addBtn">新增分类</button>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchName" placeholder="分类名称">
+            <button class="btn" id="searchBtn">搜索</button>
+        </div>
+    </div>
+    <div id="categoryList">
+        <table id="categoryTable">
+            <thead>
+            <tr><th>序号</th><th>名称</th><th>父分类</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+    <div id="errorMsg" class="error-msg"></div>
+</div>
+
+<!-- 模态框 -->
+<div id="categoryModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">新增分类</h3>
+        <form id="categoryForm" autocomplete="off">
+            <input type="hidden" id="catId">
+            <div class="form-group">
+                <label>分类名称</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label>父分类</label>
+                <select id="parentId">
+                    <option value="0">无（顶级分类）</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>状态</label>
+                <select id="status">
+                    <option value="1">启用</option>
+                    <option value="0">禁用</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="cancelBtn">取消</button>
+                <button type="submit" class="btn-submit">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalPages = 0;
+    let searchKeyword = '';
+    let allCategories = []; // 用于父分类下拉
+
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.parent.location.href = '/login.html';
+            throw new Error('未登录');
+        }
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.parent.location.href = '/login.html';
+            throw new Error('登录过期');
+        }
+        const data = await res.json();
+        if (data.code !== 1) throw new Error(data.msg);
+        return data.data;
+    }
+
+    // 加载所有分类（用于父下拉，不分页）
+    async function loadAllCategories() {
+        try {
+            const data = await apiRequest('/admin/categories/page?pageNum=1&pageSize=1000');
+            allCategories = data.records || [];
+            const select = document.getElementById('parentId');
+            select.innerHTML = '<option value="0">无（顶级分类）</option>';
+            allCategories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                // 显示名称，避免将自己作为父分类（编辑时会在表单中处理）
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error('加载分类列表失败', err);
+        }
+    }
+
+    // 获取父分类名称
+    function getParentName(parentId) {
+        if (parentId === 0) return '无';
+        const parent = allCategories.find(c => c.id === parentId);
+        return parent ? parent.name : '未知';
+    }
+
+    async function loadCategories() {
+        try {
+            let url = `/admin/categories/page?pageNum=${currentPage}&pageSize=${pageSize}`;
+            if (searchKeyword) url += `&name=${encodeURIComponent(searchKeyword)}`;
+            const data = await apiRequest(url);
+            const records = data.records;
+            totalPages = Math.ceil(data.total / pageSize);
+            let html = '';
+            records.forEach((cat, index) => {
+                html += `<tr>
+                            <td>${(currentPage - 1) * pageSize + index + 1}</td>
+                            <td>${escapeHtml(cat.name)}</td>
+                            <td>${getParentName(cat.parentId)}</td>
+                            <td>${cat.status === 1 ? '启用' : '禁用'}</td>
+                            <td>${cat.createTime || ''}</td>
+                            <td>
+                                <button class="btn-link" onclick="editCategory(${cat.id})">修改</button>
+                                <button class="btn-link" onclick="deleteCategory(${cat.id})">删除</button>
+                            </td>
+                        </tr>`;
+            });
+            document.getElementById('tableBody').innerHTML = html;
+            renderPagination();
+        } catch (err) {
+            document.getElementById('errorMsg').innerText = err.message;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function renderPagination() {
+        let html = '';
+        html += `<button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button>`;
+        html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (i >= currentPage - 2 && i <= currentPage + 2) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+        }
+        html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>下一页</button>`;
+        html += `<button onclick="changePage(${totalPages})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>末页</button>`;
+        document.getElementById('pagination').innerHTML = html;
+    }
+
+    function changePage(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        loadCategories();
+    }
+
+    function searchCategories() {
+        searchKeyword = document.getElementById('searchName').value.trim();
+        currentPage = 1;
+        loadCategories();
+    }
+
+    function showModal(title) {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('categoryModal').style.display = 'flex';
+    }
+
+    function hideModal() {
+        document.getElementById('categoryModal').style.display = 'none';
+    }
+
+    async function editCategory(id) {
+        try {
+            const cat = await apiRequest(`/admin/categories/${id}`);
+            document.getElementById('catId').value = cat.id;
+            document.getElementById('name').value = cat.name;
+            // 父分类下拉：不能选择自己或自己的子类（简单起见，允许选择任何分类，但后端应该防止循环）
+            const parentSelect = document.getElementById('parentId');
+            parentSelect.value = cat.parentId;
+            document.getElementById('status').value = cat.status;
+            showModal('编辑分类');
+        } catch (err) {
+            alert('获取分类信息失败：' + err.message);
+        }
+    }
+
+    function addCategory() {
+        document.getElementById('catId').value = '';
+        document.getElementById('name').value = '';
+        document.getElementById('parentId').value = '0';
+        document.getElementById('status').value = '1';
+        showModal('新增分类');
+    }
+
+    async function saveCategory(event) {
+        event.preventDefault();
+        const id = document.getElementById('catId').value;
+        const name = document.getElementById('name').value.trim();
+        const parentId = parseInt(document.getElementById('parentId').value);
+        const status = parseInt(document.getElementById('status').value);
+
+        if (!name) {
+            alert('分类名称不能为空');
+            return;
+        }
+
+        try {
+            if (id) {
+                await apiRequest('/admin/categories', {
+                    method: 'PUT',
+                    body: JSON.stringify({ id: parseInt(id), name, parentId, status })
+                });
+                alert('修改成功');
+            } else {
+                await apiRequest('/admin/categories', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, parentId, status })
+                });
+                alert('新增成功');
+            }
+            hideModal();
+            loadCategories();
+            loadAllCategories(); // 刷新父分类下拉
+        } catch (err) {
+            alert('操作失败：' + err.message);
+        }
+    }
+
+    async function deleteCategory(id) {
+        if (!confirm('确定删除该分类吗？删除后可能影响商品关联，请谨慎操作。')) return;
+        try {
+            await apiRequest(`/admin/categories/${id}`, { method: 'DELETE' });
+            loadCategories();
+            loadAllCategories();
+        } catch (err) {
+            alert('删除失败：' + err.message);
+        }
+    }
+
+    document.getElementById('addBtn').addEventListener('click', addCategory);
+    document.getElementById('searchBtn').addEventListener('click', searchCategories);
+    document.getElementById('categoryForm').addEventListener('submit', saveCategory);
+    document.getElementById('cancelBtn').addEventListener('click', hideModal);
+    window.onclick = function(event) {
+        const modal = document.getElementById('categoryModal');
+        if (event.target === modal) hideModal();
+    };
+
+    // 初始化
+    loadAllCategories().then(() => loadCategories());
+</script>
+</body>
+</html>

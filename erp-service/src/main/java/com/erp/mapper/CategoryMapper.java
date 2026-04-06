@@ -45,6 +45,5 @@ public interface CategoryMapper {
      * 查询所有分类
      * @return
      */
-    @Select("select * from category")
-    List<Category> selectAll();
+    List<Category> pageQuery(String  name);
 }

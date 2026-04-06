@@ -21,4 +21,14 @@
         </set>
         where id = #{id}
     </update>
+
+    <select id="pageQuery" resultType="com.erp.entity.Category">
+        select * from category
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        ORDER BY id
+    </select>
 </mapper>
