@@ -58,13 +58,13 @@ public class ProductServiceImpl implements ProductService {
     /**
      * 分页查询所有商品
      */
-    public PageResult page(Integer pageNum, Integer pageSize) {
+    public PageResult page(Integer pageNum, Integer pageSize, String name) {
 
         //设置分页参数
         PageHelper.startPage(pageNum, pageSize);
 
         //执行查询
-        List<Product> productList = productMapper.selectAll();
+        List<Product> productList = productMapper.pageQuery(name);
 
         //用PageHelper提供的PageInfo封装类封装查询结果，获取总记录数等信息
         PageInfo<Product> pageInfo = new PageInfo<>(productList);

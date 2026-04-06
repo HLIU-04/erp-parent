@@ -33,5 +33,5 @@ public interface ProductService {
     /**
      * 分页查询所有商品信息
      */
-    PageResult page(Integer pageNum, Integer pageSize);
+    PageResult page(Integer pageNum, Integer pageSize, String name);
 }

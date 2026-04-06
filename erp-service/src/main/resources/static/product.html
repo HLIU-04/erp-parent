@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>商品管理</title>
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+
+        .toolbar {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background: #b22222;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn-link {
+            background: transparent;
+            color: #b22222;
+            border: 1px solid #b22222;
+            margin: 0 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+
+        .search-box input {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f5f5f5;
+        }
+
+        .error-msg {
+            color: red;
+            margin-top: 10px;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pagination button {
+            margin: 0 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        .pagination .active {
+            background: #b22222;
+            color: white; border: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 450px;
+            max-width: 90%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px; margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            background: #b22222;
+            color: white;
+            border: none;
+        }
+
+        .btn-cancel {
+            background: #ccc;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="toolbar">
+        <div>
+            <button class="btn" id="addBtn">新增商品</button>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchName" placeholder="商品名称" autocomplete="off">
+            <button class="btn" id="searchBtn">搜索</button>
+        </div>
+    </div>
+    <div id="productList">
+        <table id="productTable">
+            <thead>
+            <tr><th>序号</th><th>名称</th><th>分类</th><th>单价</th><th>单位</th><th>状态</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+    <div id="errorMsg" class="error-msg"></div>
+</div>
+
+<!-- 模态框 -->
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">新增商品</h3>
+        <form id="productForm" autocomplete="off">
+            <input type="hidden" id="productId">
+            <div class="form-group">
+                <label>商品名称</label>
+                <input type="text" id="name" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>分类</label>
+                <select id="categoryId" required>
+                    <option value="">请选择分类</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>单价</label>
+                <input type="number" step="0.01" id="price" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>单位</label>
+                <input type="text" id="unit" required autocomplete="off" placeholder="如：克、个、袋">
+            </div>
+            <div class="form-group">
+                <label>状态</label>
+                <select id="status">
+                    <option value="1">上架</option>
+                    <option value="0">下架</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="cancelBtn">取消</button>
+                <button type="submit" class="btn-submit">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalPages = 0;
+    let searchKeyword = '';
+    let categories = [];
+
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.parent.location.href = '/login.html';
+            throw new Error('未登录');
+        }
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.parent.location.href = '/login.html';
+            throw new Error('登录过期');
+        }
+        const data = await res.json();
+        if (data.code !== 1) throw new Error(data.msg);
+        return data.data;
+    }
+
+    async function loadCategories() {
+        try {
+            const data = await apiRequest('/admin/categories/page?pageNum=1&pageSize=1000');
+            categories = data.records || [];
+            const select = document.getElementById('categoryId');
+            select.innerHTML = '<option value="">请选择分类</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error('加载分类失败', err);
+        }
+    }
+
+    function getCategoryName(categoryId) {
+        const cat = categories.find(c => c.id === categoryId);
+        return cat ? cat.name : '';
+    }
+
+    async function loadProducts() {
+        try {
+            let url = `/admin/products/page?pageNum=${currentPage}&pageSize=${pageSize}`;
+            if (searchKeyword) {
+                url += `&name=${encodeURIComponent(searchKeyword)}`;
+            }
+            const data = await apiRequest(url);
+            const records = data.records;
+            totalPages = Math.ceil(data.total / pageSize);
+            let html = '';
+            records.forEach((prod, index) => {
+                html += `<tr>
+                            <td>${(currentPage - 1) * pageSize + index + 1}</td>
+                            <td>${escapeHtml(prod.name)}</td>
+                            <td>${getCategoryName(prod.categoryId)}</td>
+                            <td>${prod.price}</td>
+                            <td>${escapeHtml(prod.unit)}</td>
+                            <td>${prod.status === 1 ? '上架' : '下架'}</td>
+                            <td>${prod.createTime || ''}</td>
+                            <td>
+                                <button class="btn-link" onclick="editProduct(${prod.id})">修改</button>
+                                <button class="btn-link" onclick="deleteProduct(${prod.id})">删除</button>
+                            </td>
+                        </tr>`;
+            });
+            document.getElementById('tableBody').innerHTML = html;
+            renderPagination();
+        } catch (err) {
+            document.getElementById('errorMsg').innerText = err.message;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function renderPagination() {
+        let html = '';
+        html += `<button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button>`;
+        html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (i >= currentPage - 2 && i <= currentPage + 2) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+        }
+        html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>下一页</button>`;
+        html += `<button onclick="changePage(${totalPages})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>末页</button>`;
+        document.getElementById('pagination').innerHTML = html;
+    }
+
+    function changePage(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        loadProducts();
+    }
+
+    function searchProducts() {
+        searchKeyword = document.getElementById('searchName').value.trim();
+        currentPage = 1;
+        loadProducts();
+    }
+
+    function showModal(title) {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    function hideModal() {
+        document.getElementById('productModal').style.display = 'none';
+    }
+
+    async function editProduct(id) {
+        try {
+            const prod = await apiRequest(`/admin/products/${id}`);
+            document.getElementById('productId').value = prod.id;
+            document.getElementById('name').value = prod.name;
+            document.getElementById('categoryId').value = prod.categoryId || '';
+            document.getElementById('price').value = prod.price;
+            document.getElementById('unit').value = prod.unit;
+            document.getElementById('status').value = prod.status;
+            showModal('编辑商品');
+        } catch (err) {
+            alert('获取商品信息失败：' + err.message);
+        }
+    }
+
+    function addProduct() {
+        document.getElementById('productId').value = '';
+        document.getElementById('name').value = '';
+        document.getElementById('categoryId').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('unit').value = '';
+        document.getElementById('status').value = '1';
+        showModal('新增商品');
+    }
+
+    async function saveProduct(event) {
+        event.preventDefault();
+        const id = document.getElementById('productId').value;
+        const name = document.getElementById('name').value.trim();
+        const categoryId = parseInt(document.getElementById('categoryId').value);
+        const price = parseFloat(document.getElementById('price').value);
+        const unit = document.getElementById('unit').value.trim();
+        const status = parseInt(document.getElementById('status').value);
+
+        if (!name || !categoryId || isNaN(price) || !unit) {
+            alert('请完整填写所有必填项');
+            return;
+        }
+
+        try {
+            if (id) {
+                await apiRequest('/admin/products', {
+                    method: 'PUT',
+                    body: JSON.stringify({ id: parseInt(id), name, categoryId, price, unit, status })
+                });
+                alert('修改成功');
+            } else {
+                await apiRequest('/admin/products', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, categoryId, price, unit, status })
+                });
+                alert('新增成功');
+            }
+            hideModal();
+            loadProducts();
+        } catch (err) {
+            alert('操作失败：' + err.message);
+        }
+    }
+
+    async function deleteProduct(id) {
+        if (!confirm('确定删除该商品吗？')) return;
+        try {
+            await apiRequest(`/admin/products/${id}`, { method: 'DELETE' });
+            loadProducts();
+        } catch (err) {
+            alert('删除失败：' + err.message);
+        }
+    }
+
+    document.getElementById('addBtn').addEventListener('click', addProduct);
+    document.getElementById('searchBtn').addEventListener('click', searchProducts);
+    document.getElementById('productForm').addEventListener('submit', saveProduct);
+    document.getElementById('cancelBtn').addEventListener('click', hideModal);
+    window.onclick = function(event) {
+        const modal = document.getElementById('productModal');
+        if (event.target === modal) hideModal();
+    };
+
+    loadCategories().then(() => loadProducts());
+</script>
+</body>
+</html>

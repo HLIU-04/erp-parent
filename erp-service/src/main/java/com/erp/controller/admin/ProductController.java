@@ -62,12 +62,13 @@ public class ProductController {
     }
 
     /**
-     * 查询所有商品信息
+     * 分页查询商品信息
      */
     @GetMapping("/products/page")
-    public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
-                       @RequestParam(defaultValue = "10") Integer pageSize){
-        PageResult pageResult = productService.page(pageNum, pageSize);
+    public Result<PageResult> page(@RequestParam(defaultValue = "1") Integer pageNum,
+                       @RequestParam(defaultValue = "10") Integer pageSize,
+                       @RequestParam(required = false) String name){
+        PageResult pageResult = productService.page(pageNum, pageSize, name);
         return Result.success(pageResult);
     }
 }

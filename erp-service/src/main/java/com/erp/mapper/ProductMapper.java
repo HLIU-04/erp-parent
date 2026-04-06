@@ -41,9 +41,8 @@ public interface ProductMapper {
     Product getById(Integer id);
 
     /**
-     * 查询所有商品
+     * 分页查询所有商品
      * @return
      */
-    @Select("select * from product")
-    List<Product> selectAll();
+    List<Product> pageQuery(String name);
 }
