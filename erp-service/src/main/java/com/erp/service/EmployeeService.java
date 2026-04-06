@@ -33,7 +33,7 @@ public interface EmployeeService {
     /**
      * 分页查询员工
      */
-    PageResult page(Integer pageNum, Integer pageSize);
+    PageResult page(Integer pageNum, Integer pageSize, String name);
 
     /**
      * 员工登录

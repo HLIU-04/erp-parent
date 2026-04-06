@@ -1,6 +1,7 @@
 package com.erp.service.Impl;
 
 import com.erp.entity.Employee;
+import com.erp.exception.BusinessException;
 import com.erp.mapper.EmployeeMapper;
 import com.erp.result.PageResult;
 import com.erp.service.EmployeeService;
@@ -28,6 +29,15 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @param employee
      */
     public void add(Employee employee) {
+        // 加密密码
+        String rawPassword = employee.getPassword();
+        if (rawPassword != null && !rawPassword.isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(rawPassword);
+            employee.setPassword(encodedPassword);
+            System.out.println("加密后密码：" + encodedPassword); // 调试用
+        } else {
+            throw new BusinessException("密码不能为空");
+        }
         employee.setCreateTime(LocalDateTime.now());
         employee.setUpdateTime(LocalDateTime.now());
         employeeMapper.add(employee);
@@ -46,7 +56,12 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @param employee
      */
     public void update(Employee employee) {
+        // 如果密码不为空，则加密
+        if (employee.getPassword() != null && !employee.getPassword().isEmpty()) {
+            employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+        }
         employee.setUpdateTime(LocalDateTime.now());
+        // 调用 mapper 更新
         employeeMapper.update(employee);
     }
 
@@ -62,13 +77,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     /**
      * 分页查询员工
      */
-    public PageResult page(Integer pageNum, Integer pageSize) {
+    public PageResult page(Integer pageNum, Integer pageSize, String name) {
 
         //设置分页参数
         PageHelper.startPage(pageNum, pageSize);
 
         //执行查询
-        List<Employee> employeeList = employeeMapper.selectAll();
+        List<Employee> employeeList = employeeMapper.pageQuery(name);
 
         //用PageHelper提供的PageInfo封装类封装查询结果，获取总记录数等信息
         PageInfo<Employee> pageInfo = new PageInfo<>(employeeList);

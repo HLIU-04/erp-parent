@@ -14,8 +14,8 @@ public interface EmployeeMapper {
      * 添加员工
      * @param employee
      */
-    @Insert("insert into employee(username, name, sex, phone, dept_id, create_time, update_time)" +
-            "values (#{username}, #{name}, #{sex}, #{phone}, #{deptId}, #{createTime}, #{updateTime})")
+    @Insert("insert into employee (username, name, password, sex, phone, dept_id, status, create_time, update_time) " +
+            "values (#{username}, #{name}, #{password}, #{sex}, #{phone}, #{deptId}, #{status}, #{createTime}, #{updateTime})")
     void add(Employee employee);
 
     /**
@@ -43,8 +43,7 @@ public interface EmployeeMapper {
      * 分页查询所有员工
      * @return
      */
-    @Select("select * from employee")
-    List<Employee> selectAll();
+    List<Employee> pageQuery(String  name);
 
     /**
      * 根据用户名查询员工
