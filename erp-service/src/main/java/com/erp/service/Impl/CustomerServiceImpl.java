@@ -54,13 +54,13 @@ public class CustomerServiceImpl implements CustomerService {
     /**
      * 分页查询客户
      */
-    public PageResult page(Integer pageNum, Integer pageSize) {
+    public PageResult page(Integer pageNum, Integer pageSize, String name) {
 
         //设置分页参数
         PageHelper.startPage(pageNum, pageSize);
 
         //执行查询
-        List<Customer> customersList = customerMapper.selectAll();
+        List<Customer> customersList = customerMapper.pageQuery(name);
 
         //用PageHelper提供的PageInfo封装类封装查询结果，获取总记录数等信息
         PageInfo<Customer> pageInfo = new PageInfo<>(customersList);

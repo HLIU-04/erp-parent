@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>客户管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .toolbar {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            background: #b22222;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn-link {
+            background: transparent;
+            color: #b22222;
+            border: 1px solid #b22222;
+            margin: 0 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+        .search-box input {
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f5f5f5;
+        }
+        .error-msg {
+            color: red;
+            margin-top: 10px;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination button {
+            margin: 0 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        .pagination .active {
+            background: #b22222;
+            color: white;
+            border: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+        .btn-submit {
+            background: #b22222;
+            color: white;
+            border: none;
+        }
+        .btn-cancel {
+            background: #ccc;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="toolbar">
+        <div>
+            <button class="btn" id="addBtn">新增客户</button>
+        </div>
+        <div class="search-box">
+            <input type="text" id="searchName" placeholder="客户姓名" autocomplete="off">
+            <button class="btn" id="searchBtn">搜索</button>
+        </div>
+    </div>
+    <div id="customerList">
+        <table id="customerTable">
+            <thead>
+            <tr><th>ID</th><th>姓名</th><th>电话</th><th>地址</th><th>微信</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+    <div id="errorMsg" class="error-msg"></div>
+</div>
+
+<!-- 客户表单模态框 -->
+<div id="customerModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">新增客户</h3>
+        <form id="customerForm" autocomplete="off">
+            <input type="hidden" id="customerId">
+            <div class="form-group">
+                <label>姓名</label>
+                <input type="text" id="name" required readonly onfocus="this.removeAttribute('readonly')">
+            </div>
+            <div class="form-group">
+                <label>电话</label>
+                <input type="text" id="phone" readonly onfocus="this.removeAttribute('readonly')">
+            </div>
+            <div class="form-group">
+                <label>地址</label>
+                <input type="text" id="address" readonly onfocus="this.removeAttribute('readonly')">
+            </div>
+            <div class="form-group">
+                <label>微信</label>
+                <input type="text" id="wechat" readonly onfocus="this.removeAttribute('readonly')">
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="cancelBtn">取消</button>
+                <button type="submit" class="btn-submit">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalPages = 0;
+    let allCustomers = [];      // 存储当前页原始数据，用于本地搜索
+    let searchKeyword = '';
+
+    // API 请求函数（适配 iframe 内使用）
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.parent.location.href = '/login.html';
+            throw new Error('未登录');
+        }
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.parent.location.href = '/login.html';
+            throw new Error('登录过期');
+        }
+        const data = await res.json();
+        if (data.code !== 1) throw new Error(data.msg);
+        return data.data;
+    }
+
+    // 加载客户列表（服务端分页，无搜索参数）
+    async function loadCustomers() {
+        try {
+            let url = `/admin/customers/page?pageNum=${currentPage}&pageSize=${pageSize}`;
+            const data = await apiRequest(url);
+            // data 结构: { total, records }
+            const records = data.records || [];
+            allCustomers = records;   // 保存原始数据用于本地搜索
+            const total = data.total;
+            totalPages = Math.ceil(total / pageSize);
+            // 根据本地搜索关键词过滤显示
+            let filteredRecords = records;
+            if (searchKeyword.trim() !== '') {
+                filteredRecords = records.filter(c => c.name && c.name.includes(searchKeyword));
+            }
+            renderTable(filteredRecords);
+            renderPagination();
+        } catch (err) {
+            document.getElementById('errorMsg').innerText = err.message;
+        }
+    }
+
+    function renderTable(customers) {
+        let html = '';
+        customers.forEach((cust, index) => {
+            html += `<tr>
+                        <td>${cust.id}</td>
+                        <td>${escapeHtml(cust.name)}</td>
+                        <td>${escapeHtml(cust.phone)}</td>
+                        <td>${escapeHtml(cust.address)}</td>
+                        <td>${escapeHtml(cust.wechat)}</td>
+                        <td>${cust.createTime || ''}</td>
+                        <td>
+                            <button class="btn-link" onclick="editCustomer(${cust.id})">修改</button>
+                            <button class="btn-link" onclick="deleteCustomer(${cust.id})">删除</button>
+                        </td>
+                    </tr>`;
+        });
+        document.getElementById('tableBody').innerHTML = html || '<tr><td colspan="7">暂无数据</td></tr>';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function renderPagination() {
+        let html = '';
+        html += `<button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button>`;
+        html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (i >= currentPage - 2 && i <= currentPage + 2) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+        }
+        html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>下一页</button>`;
+        html += `<button onclick="changePage(${totalPages})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>末页</button>`;
+        document.getElementById('pagination').innerHTML = html;
+    }
+
+    function changePage(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        loadCustomers();
+    }
+
+    // 本地搜索（不重新请求后端）
+    function searchLocal() {
+        searchKeyword = document.getElementById('searchName').value.trim();
+        currentPage = 1;   // 重置到第一页，但为了保持分页正确，重新加载数据后再过滤
+        loadCustomers();
+    }
+
+    // 模态框操作
+    function showModal(title) {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('customerModal').style.display = 'flex';
+    }
+
+    function hideModal() {
+        document.getElementById('customerModal').style.display = 'none';
+        document.getElementById('customerForm').reset();
+        document.getElementById('customerId').value = '';
+    }
+
+    async function editCustomer(id) {
+        try {
+            const cust = await apiRequest(`/admin/customers/${id}`);
+            document.getElementById('customerId').value = cust.id;
+            document.getElementById('name').value = cust.name || '';
+            document.getElementById('phone').value = cust.phone || '';
+            document.getElementById('address').value = cust.address || '';
+            document.getElementById('wechat').value = cust.wechat || '';
+            showModal('编辑客户');
+        } catch (err) {
+            alert('获取客户信息失败：' + err.message);
+        }
+    }
+
+    function addCustomer() {
+        document.getElementById('customerId').value = '';
+        document.getElementById('name').value = '';
+        document.getElementById('phone').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('wechat').value = '';
+        showModal('新增客户');
+    }
+
+    async function saveCustomer(event) {
+        event.preventDefault();
+        const id = document.getElementById('customerId').value;
+        const name = document.getElementById('name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const address = document.getElementById('address').value.trim();
+        const wechat = document.getElementById('wechat').value.trim();
+
+        if (!name) {
+            alert('姓名不能为空');
+            return;
+        }
+
+        const customer = { name, phone, address, wechat };
+        try {
+            if (id) {
+                customer.id = parseInt(id);
+                await apiRequest('/admin/customers', {
+                    method: 'PUT',
+                    body: JSON.stringify(customer)
+                });
+                alert('修改成功');
+            } else {
+                await apiRequest('/admin/customers', {
+                    method: 'POST',
+                    body: JSON.stringify(customer)
+                });
+                alert('新增成功');
+            }
+            hideModal();
+            loadCustomers();
+        } catch (err) {
+            alert('操作失败：' + err.message);
+        }
+    }
+
+    async function deleteCustomer(id) {
+        if (!confirm('确定删除该客户吗？')) return;
+        try {
+            await apiRequest(`/admin/customers/${id}`, { method: 'DELETE' });
+            loadCustomers();
+        } catch (err) {
+            alert('删除失败：' + err.message);
+        }
+    }
+
+    // 事件绑定
+    document.getElementById('addBtn').addEventListener('click', addCustomer);
+    document.getElementById('searchBtn').addEventListener('click', searchLocal);
+    document.getElementById('customerForm').addEventListener('submit', saveCustomer);
+    document.getElementById('cancelBtn').addEventListener('click', hideModal);
+    window.onclick = function(event) {
+        const modal = document.getElementById('customerModal');
+        if (event.target === modal) hideModal();
+    };
+
+    // 初始化
+    loadCustomers();
+</script>
+</body>
+</html>

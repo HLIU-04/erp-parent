@@ -67,8 +67,9 @@ public class CustomerController {
      */
     @GetMapping("/customers/page")
     public Result page(@RequestParam(defaultValue = "1") Integer pageNum,
-                      @RequestParam(defaultValue = "10") Integer pageSize){
-        PageResult pageResult = customerService.page(pageNum, pageSize);
+                      @RequestParam(defaultValue = "10") Integer pageSize,
+                       @RequestParam(required = false) String name){
+        PageResult pageResult = customerService.page(pageNum, pageSize, name);
         return Result.success(pageResult);
     }
 

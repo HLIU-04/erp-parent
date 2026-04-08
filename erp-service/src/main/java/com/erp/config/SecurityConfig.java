@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -51,9 +52,17 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
+                        // 公开资源
                         .requestMatchers("/login", "/login.html", "/index.html", "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg").permitAll()
+                        // 员工和管理员都可访问的 GET 接口（放在前面优先匹配）
+                        .requestMatchers(HttpMethod.GET, "/admin/depts/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/customers/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/products/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        // 管理员专用接口
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        // 员工专用接口
                         .requestMatchers("/employee/**").hasAuthority("EMPLOYEE")
+                        // 其他请求需要认证
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(handling -> handling

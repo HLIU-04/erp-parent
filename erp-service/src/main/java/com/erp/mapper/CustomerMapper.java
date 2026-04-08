@@ -44,6 +44,5 @@ public interface CustomerMapper {
      * 分页查询所有客户
      * @return
      */
-    @Select("select * from customer")
-    List<Customer> selectAll();
+    List<Customer> pageQuery(String name);
 }

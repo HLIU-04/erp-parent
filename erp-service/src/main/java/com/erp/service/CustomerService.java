@@ -33,5 +33,5 @@ public interface CustomerService {
     /**
      * 分页查询客户
      */
-    PageResult page(Integer pageNum, Integer pageSize);
+    PageResult page(Integer pageNum, Integer pageSize, String name);
 }
