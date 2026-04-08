@@ -31,4 +31,8 @@ public class OrderPageVO {
     private String customerPhone;
 
     private String deptName;
+
+    private String operatorName;
+
+    private String payMethod;
 }

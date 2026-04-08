@@ -34,40 +34,55 @@
         where id = #{id}
     </update>
 
-    <select id="pageQuery" resultType="com.erp.vo.OrderPageVO">
-            SELECT
-            o.id,
-            o.order_no AS orderNo,
-            o.sale_time AS saleTime,
-            o.total_amount AS totalAmount,
-            o.actual_amount AS actualAmount,
-            c.name AS customerName,
-            c.phone AS customerPhone,
-            d.name AS deptName
-            FROM sale_order o
-            LEFT JOIN customer c ON o.customer_id = c.id
-            LEFT JOIN dept d ON o.dept_id = d.id
-            <where>
-                <if test="orderNo != null and orderNo != ''">
-                    AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
-                </if>
-                <if test="customerName != null and customerName != ''">
-                    AND c.name LIKE CONCAT('%', #{customerName}, '%')
-                </if>
-                <if test="customerPhone != null and customerPhone != ''">
-                    AND c.phone LIKE CONCAT('%', #{customerPhone}, '%')
-                </if>
-                <if test="deptId != null">
-                    AND o.dept_id = #{deptId}
-                </if>
-                <if test="startDate != null">
-                    AND o.sale_time >= #{startDate}
-                </if>
-                <if test="endDate != null">
-                    <!-- 处理结束日期：当天 23:59:59 -->
-                    AND o.sale_time &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
-                </if>
-            </where>
-            ORDER BY o.sale_time DESC
+    <resultMap id="OrderPageVOResultMap" type="com.erp.vo.OrderPageVO">
+        <id column="id" property="id"/>
+        <result column="orderNo" property="orderNo"/>
+        <result column="saleTime" property="saleTime"/>
+        <result column="totalAmount" property="totalAmount"/>
+        <result column="actualAmount" property="actualAmount"/>
+        <result column="customerName" property="customerName"/>
+        <result column="customerPhone" property="customerPhone"/>
+        <result column="deptName" property="deptName"/>
+        <result column="operatorName" property="operatorName"/>
+        <result column="payMethod" property="payMethod"/>
+    </resultMap>
+    <select id="pageQuery" resultMap="OrderPageVOResultMap">
+        SELECT
+        o.id,
+        o.order_no AS orderNo,
+        o.sale_time AS saleTime,
+        o.total_amount AS totalAmount,
+        o.actual_amount AS actualAmount,
+        o.pay_method AS payMethod,
+        o.status,
+        c.name AS customerName,
+        c.phone AS customerPhone,
+        d.name AS deptName,
+        e.name AS operatorName
+        FROM sale_order o
+        LEFT JOIN customer c ON o.customer_id = c.id
+        LEFT JOIN dept d ON o.dept_id = d.id
+        LEFT JOIN employee e ON o.operator_id = e.id
+        <where>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{orderNo}, '%')
+            </if>
+            <if test="customerName != null and customerName != ''">
+                AND c.name LIKE CONCAT('%', #{customerName}, '%')
+            </if>
+            <if test="customerPhone != null and customerPhone != ''">
+                AND c.phone LIKE CONCAT('%', #{customerPhone}, '%')
+            </if>
+            <if test="deptId != null">
+                AND o.dept_id = #{deptId}
+            </if>
+            <if test="startDate != null">
+                AND DATE(o.sale_time)  &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND DATE(o.sale_time)  &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY o.sale_time DESC
     </select>
 </mapper>

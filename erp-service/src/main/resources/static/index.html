@@ -157,7 +157,7 @@
         return data.data;
     }
 
-    // 从 token 解析用户名
+    // 从 token 解析用户名和真实姓名
     function getUserInfo() {
         const token = localStorage.getItem('token');
         if (!token) return null;
@@ -165,14 +165,23 @@
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(atob(base64));
-            return { username: payload.sub, role: payload.role };
+
+            // 后端对 name 进行了 URL 编码，前端需要解码
+            let name = payload.name;
+            if (name) {
+                try {
+                    name = decodeURIComponent(name);
+                } catch(e) { /* 解码失败则保留原值 */ }
+            }
+
+            return { username: payload.sub, role: payload.role, name: name || payload.sub };
         } catch(e) { return null; }
     }
 
-    // 更新顶部栏
+    // 更新顶部栏（显示汉字姓名）
     function updateHeader() {
         const user = getUserInfo();
-        document.getElementById('username').innerText = user ? user.username : '未知';
+        document.getElementById('username').innerText = user ? user.name : '未知';
         function tick() {
             const now = new Date();
             const str = now.toLocaleString('zh-CN');
@@ -197,11 +206,13 @@
             content.style.padding = '0';
             content.style.overflow = 'hidden';
         } else if (page === 'customer') {
-            content.innerHTML = `<div class="welcome-card"><h2>客户管理</h2><p>功能开发中，敬请期待...</p></div>`;
-            content.style.padding = '20px';
+            content.innerHTML = `<iframe src="/customer.html" style="width:100%; height:100%; border:none;"></iframe>`;
+            content.style.padding = '0';
+            content.style.overflow = 'hidden';
         } else if (page === 'order') {
-            content.innerHTML = `<div class="welcome-card"><h2>订单管理</h2><p>功能开发中，敬请期待...</p></div>`;
-            content.style.padding = '20px';
+            content.innerHTML = `<iframe src="/order.html" style="width:100%; height:100%; border:none;"></iframe>`;
+            content.style.padding = '0';
+            content.style.overflow = 'hidden';
         } else if (page === 'daily') {
             content.innerHTML = `<div class="welcome-card"><h2>日报管理</h2><p>功能开发中，敬请期待...</p></div>`;
             content.style.padding = '20px';

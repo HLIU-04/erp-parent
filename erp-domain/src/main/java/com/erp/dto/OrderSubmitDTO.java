@@ -31,4 +31,6 @@ public class OrderSubmitDTO {
 
     private List<OrderDetailDTO> details;// 商品明细列表
 
+    private Integer status = 1;
+
 }

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>订单管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .toolbar { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+        .btn { background: #b22222; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #b22222; }
+        .btn-success { background: #28a745; }
+        .btn-link { background: transparent; color: #b22222; border: 1px solid #b22222; margin: 0 4px; padding: 2px 8px; cursor: pointer; }
+        .search-box input, .search-box select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .error-msg { color: red; margin-top: 10px; }
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination button { margin: 0 4px; padding: 4px 8px; cursor: pointer; }
+        .pagination .active { background: #b22222; color: white; border: none; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 20px; border-radius: 8px; width: 800px; max-width: 90%; max-height: 80%; overflow-y: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .modal-content h3 { margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-buttons button { padding: 6px 12px; cursor: pointer; }
+        .btn-submit { background: #b22222; color: white; border: none; }
+        .btn-cancel { background: #ccc; border: none; }
+        .detail-table, .item-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .detail-table th, .detail-table td, .item-table th, .item-table td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        .item-table input, .item-table select { width: 100%; padding: 4px; box-sizing: border-box; }
+        .add-row-btn { margin: 10px 0; background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+        .remove-row-btn { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; }
+        .readonly-text { background: #f5f5f5; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div>
+    <div class="toolbar">
+        <div class="filters">
+            <input type="text" id="searchOrderNo" placeholder="订单号" autocomplete="off" style="padding:6px; width:140px;">
+            <input type="text" id="searchCustomerName" placeholder="客户名" autocomplete="off" style="padding:6px; width:120px;">
+            <input type="text" id="searchCustomerPhone" placeholder="客户电话" autocomplete="off" style="padding:6px; width:120px;">
+            <select id="searchDeptId" style="padding:6px; width:100px;">
+                <option value="">全部部门</option>
+            </select>
+            <input type="date" id="searchStartDate" style="padding:6px;">
+            <span>~</span>
+            <input type="date" id="searchEndDate" style="padding:6px;">
+            <button class="btn" id="searchBtn">搜索</button>
+            <button class="btn" id="resetBtn">重置</button>
+        </div>
+        <div>
+            <button class="btn btn-success" id="addOrderBtn" style="display:none;">+ 新增订单</button>
+        </div>
+    </div>
+    <div id="orderList">
+        <table id="orderTable">
+            <thead>
+            <tr><th>订单号</th><th>客户名称</th><th>操作员</th><th>部门</th><th>应收金额</th><th>实收金额</th><th>支付方式</th><th>销售时间</th><th>操作</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+    <div id="errorMsg" class="error-msg"></div>
+</div>
+
+<!-- 详情模态框（只读，无状态） -->
+<div id="detailModal" class="modal">
+    <div class="modal-content">
+        <h3>订单详情</h3>
+        <div id="detailContent"></div>
+        <div class="modal-buttons">
+            <button type="button" class="btn-cancel" id="closeDetailBtn">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 修改模态框（仅管理员） -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>修改订单</h3>
+        <form id="editForm" autocomplete="off">
+            <input type="hidden" id="editOrderId">
+            <div class="form-group">
+                <label>订单号</label>
+                <div id="editOrderNo" class="readonly-text"></div>
+            </div>
+            <div class="form-group">
+                <label>客户名称</label>
+                <div id="editCustomerName" class="readonly-text"></div>
+            </div>
+            <div class="form-group">
+                <label>实收金额</label>
+                <input type="number" step="0.01" id="editActualAmount" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>支付方式</label>
+                <select id="editPayMethod">
+                    <option value="现金">现金</option>
+                    <option value="微信">微信</option>
+                    <option value="支付宝">支付宝</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" id="editRemark" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>订单明细</label>
+                <table class="item-table" id="editItemsTable">
+                    <thead><tr><th>商品名称</th><th>数量</th><th>单价</th><th>小计</th><th>操作</th></tr></thead>
+                    <tbody id="editItemsBody"></tbody>
+                </table>
+                <button type="button" class="add-row-btn" id="addItemBtn">+ 添加明细</button>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="cancelEditBtn">取消</button>
+                <button type="submit" class="btn-submit">保存修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 新增订单模态框（仅员工） -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <h3>新增订单</h3>
+        <form id="addForm" autocomplete="off">
+            <div class="form-group">
+                <label>客户</label>
+                <select id="addCustomerId" style="width:100%">
+                    <option value="">散客（无客户信息）</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>支付方式</label>
+                <select id="addPayMethod">
+                    <option value="现金">现金</option>
+                    <option value="微信">微信</option>
+                    <option value="支付宝">支付宝</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>实收金额</label>
+                <input type="number" step="0.01" id="addActualAmount" autocomplete="off" placeholder="不填则等于应收总额">
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input type="text" id="addRemark" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>订单明细</label>
+                <table class="item-table" id="addItemsTable">
+                    <thead><tr><th>商品名称</th><th>数量</th><th>单价</th><th>小计</th><th>操作</th></tr></thead>
+                    <tbody id="addItemsBody"></tbody>
+                </table>
+                <button type="button" class="add-row-btn" id="addItemBtnAdd">+ 添加明细</button>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="cancelAddBtn">取消</button>
+                <button type="submit" class="btn-submit">提交订单</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalPages = 0;
+    let currentParams = {};
+
+    // 角色和API前缀
+    let userRole = null;
+    let apiPrefix = '/admin'; // 订单业务接口前缀（管理员默认）
+    let currentUser = { userId: null, deptId: null, role: null };
+
+    // 缓存数据
+    let productMap = new Map(); // key: productName, value: {id, price}
+    let deptList = [];
+    let customerList = [];
+
+    // 获取当前用户信息并设置 apiPrefix
+    function initUserInfo() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(atob(base64));
+            currentUser.userId = payload.userId;
+            currentUser.deptId = payload.deptId;
+            currentUser.role = payload.role;
+            userRole = payload.role;
+            if (userRole === 'EMPLOYEE') {
+                apiPrefix = '/employee';
+            } else {
+                apiPrefix = '/admin';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // 获取默认日期范围
+    function getDefaultDateRange() {
+        const today = new Date();
+        const formatDate = (date) => date.toISOString().slice(0,10);
+        let startDate, endDate;
+        endDate = formatDate(today);
+        if (userRole === 'EMPLOYEE') {
+            startDate = endDate;
+        } else {
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 6);
+            startDate = formatDate(sevenDaysAgo);
+        }
+        return { startDate, endDate };
+    }
+
+    // API 请求
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.parent.location.href = '/login.html';
+            throw new Error('未登录');
+        }
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.parent.location.href = '/login.html';
+            throw new Error('登录过期');
+        }
+        const data = await res.json();
+        if (data.code !== 1) throw new Error(data.msg);
+        return data.data;
+    }
+
+    // 加载部门列表
+    async function loadDepts() {
+        try {
+            const data = await apiRequest('/admin/depts/page?pageNum=1&pageSize=100');
+            deptList = data.records || [];
+            const select = document.getElementById('searchDeptId');
+            select.innerHTML = '<option value="">全部部门</option>';
+            deptList.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error('加载部门失败', err);
+        }
+    }
+
+    // 加载客户列表
+    async function loadCustomers() {
+        try {
+            const data = await apiRequest('/admin/customers/page?pageNum=1&pageSize=1000');
+            customerList = data.records || [];
+            const select = document.getElementById('addCustomerId');
+            select.innerHTML = '<option value="">散客（无客户信息）</option>';
+            customerList.forEach(cust => {
+                const option = document.createElement('option');
+                option.value = cust.id;
+                option.textContent = cust.name;
+                select.appendChild(option);
+            });
+        } catch (err) {
+            console.error('加载客户失败', err);
+        }
+    }
+
+    // 加载商品列表
+    async function loadProducts() {
+        try {
+            const data = await apiRequest('/admin/products/page?pageNum=1&pageSize=100');
+            const products = data.records || [];
+            productMap.clear();
+            products.forEach(p => {
+                productMap.set(p.name, { id: p.id, price: p.price });
+            });
+            console.log('商品加载完成，共', productMap.size, '种');
+        } catch (err) {
+            console.error('加载商品失败', err);
+        }
+    }
+
+    async function ensureProductsLoaded() {
+        if (productMap.size === 0) {
+            await loadProducts();
+        }
+    }
+
+    // 加载订单列表
+    async function loadOrders() {
+        try {
+            let url = `${apiPrefix}/orders/page?pageNum=${currentPage}&pageSize=${pageSize}`;
+            const params = {
+                orderNo: document.getElementById('searchOrderNo').value.trim(),
+                customerName: document.getElementById('searchCustomerName').value.trim(),
+                customerPhone: document.getElementById('searchCustomerPhone').value.trim(),
+                deptId: document.getElementById('searchDeptId').value,
+                startDate: document.getElementById('searchStartDate').value,
+                endDate: document.getElementById('searchEndDate').value
+            };
+            currentParams = params;
+            for (let key in params) {
+                if (params[key]) url += `&${key}=${encodeURIComponent(params[key])}`;
+            }
+            const data = await apiRequest(url);
+            const records = data.records || [];
+            const total = data.total;
+            totalPages = Math.ceil(total / pageSize);
+            renderTable(records);
+            renderPagination();
+        } catch (err) {
+            document.getElementById('errorMsg').innerText = err.message;
+        }
+    }
+
+    function renderTable(orders) {
+        let html = '';
+        orders.forEach(order => {
+            let actionButtons = `<button class="btn-link" onclick="viewOrder(${order.id})">详情</button>`;
+            if (userRole === 'ADMIN') {
+                actionButtons += `<button class="btn-link" onclick="editOrder(${order.id})">修改</button>
+                                  <button class="btn-link" onclick="deleteOrder(${order.id})">删除</button>`;
+            }
+            html += `<tr>
+                        <td>${escapeHtml(order.orderNo)}</td>
+                        <td>${escapeHtml(order.customerName)}</td>
+                        <td>${escapeHtml(order.operatorName)}</td>
+                        <td>${escapeHtml(order.deptName)}</td>
+                        <td>${order.totalAmount}</td>
+                        <td>${order.actualAmount}</td>
+                        <td>${escapeHtml(order.payMethod)}</td>
+                        <td>${order.saleTime || ''}</td>
+                        <td>${actionButtons}</td>
+                    </tr>`;
+        });
+        document.getElementById('tableBody').innerHTML = html || '<tr><td colspan="9">暂无数据</td</tr>';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function renderPagination() {
+        let html = '';
+        html += `<button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button>`;
+        html += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (i >= currentPage - 2 && i <= currentPage + 2) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+        }
+        html += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>下一页</button>`;
+        html += `<button onclick="changePage(${totalPages})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>末页</button>`;
+        document.getElementById('pagination').innerHTML = html;
+    }
+
+    function changePage(page) {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        loadOrders();
+    }
+
+    function searchOrders() {
+        currentPage = 1;
+        loadOrders();
+    }
+
+    function resetSearch() {
+        document.getElementById('searchOrderNo').value = '';
+        document.getElementById('searchCustomerName').value = '';
+        document.getElementById('searchCustomerPhone').value = '';
+        document.getElementById('searchDeptId').value = '';
+        const { startDate, endDate } = getDefaultDateRange();
+        document.getElementById('searchStartDate').value = startDate;
+        document.getElementById('searchEndDate').value = endDate;
+        currentPage = 1;
+        loadOrders();
+    }
+
+    // 查看详情（无状态）
+    async function viewOrder(id) {
+        try {
+            const order = await apiRequest(`${apiPrefix}/orders/${id}`);
+            let itemsHtml = '';
+            if (order.items && order.items.length) {
+                itemsHtml = '<table class="detail-table"><thead><tr><th>商品名称</th><th>数量</th><th>单价</th><th>小计</th></tr></thead><tbody>';
+                order.items.forEach(item => {
+                    itemsHtml += `<tr><td>${escapeHtml(item.productName)}</td> <td>${item.quantity}</td> <td>${item.unitPrice}</td> <td>${item.totalPrice}</td></tr>`;
+                });
+                itemsHtml += '</tbody></table>';
+            } else {
+                itemsHtml = '<p>无明细</p>';
+            }
+            const content = `
+                <div class="form-group"><label>订单号</label><div class="readonly-text">${escapeHtml(order.orderNo)}</div></div>
+                <div class="form-group"><label>客户名称</label><div class="readonly-text">${escapeHtml(order.customerName)}</div></div>
+                <div class="form-group"><label>操作员</label><div class="readonly-text">${escapeHtml(order.operatorName)}</div></div>
+                <div class="form-group"><label>部门</label><div class="readonly-text">${escapeHtml(order.deptName)}</div></div>
+                <div class="form-group"><label>应收金额</label><div class="readonly-text">${order.totalAmount}</div></div>
+                <div class="form-group"><label>实收金额</label><div class="readonly-text">${order.actualAmount}</div></div>
+                <div class="form-group"><label>支付方式</label><div class="readonly-text">${escapeHtml(order.payMethod)}</div></div>
+                <div class="form-group"><label>销售时间</label><div class="readonly-text">${order.saleTime || ''}</div></div>
+                <div class="form-group"><label>备注</label><div class="readonly-text">${escapeHtml(order.remark)}</div></div>
+                <div class="form-group"><label>订单明细</label>${itemsHtml}</div>
+            `;
+            document.getElementById('detailContent').innerHTML = content;
+            document.getElementById('detailModal').style.display = 'flex';
+        } catch (err) {
+            alert('获取详情失败：' + err.message);
+        }
+    }
+
+    // 管理员修改订单
+    async function editOrder(id) {
+        if (userRole !== 'ADMIN') return;
+        try {
+            const order = await apiRequest(`/admin/orders/${id}`);
+            document.getElementById('editOrderId').value = order.id;
+            document.getElementById('editOrderNo').innerText = order.orderNo;
+            document.getElementById('editCustomerName').innerText = order.customerName;
+            document.getElementById('editActualAmount').value = order.actualAmount;
+            document.getElementById('editPayMethod').value = order.payMethod;
+            document.getElementById('editRemark').value = order.remark || '';
+            const itemsBody = document.getElementById('editItemsBody');
+            itemsBody.innerHTML = '';
+            if (order.items && order.items.length) {
+                order.items.forEach(item => {
+                    addEditRow(item.productName, item.quantity, item.unitPrice);
+                });
+            } else {
+                addEditRow('', 0, 0);
+            }
+            document.getElementById('editModal').style.display = 'flex';
+        } catch (err) {
+            alert('获取订单信息失败：' + err.message);
+        }
+    }
+
+    function addEditRow(productName = '', quantity = 0, unitPrice = 0) {
+        const tbody = document.getElementById('editItemsBody');
+        const row = tbody.insertRow();
+        const selectCell = row.insertCell(0);
+        const select = document.createElement('select');
+        select.className = 'product-select';
+        select.style.width = '100%';
+        const optionEmpty = document.createElement('option');
+        optionEmpty.value = '';
+        optionEmpty.textContent = '请选择商品';
+        select.appendChild(optionEmpty);
+        for (let [name, info] of productMap.entries()) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (name === productName) opt.selected = true;
+            select.appendChild(opt);
+        }
+        select.addEventListener('change', function() {
+            const selectedName = this.value;
+            if (selectedName && productMap.has(selectedName)) {
+                const priceInput = row.cells[2].querySelector('input');
+                priceInput.value = productMap.get(selectedName).price;
+                updateSubtotal(row);
+            } else {
+                row.cells[2].querySelector('input').value = '';
+                updateSubtotal(row);
+            }
+        });
+        selectCell.appendChild(select);
+        const qtyCell = row.insertCell(1);
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.step = 'any';
+        qtyInput.value = quantity;
+        qtyInput.style.width = '100%';
+        qtyInput.addEventListener('input', () => updateSubtotal(row));
+        qtyCell.appendChild(qtyInput);
+        const priceCell = row.insertCell(2);
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.step = 'any';
+        priceInput.value = unitPrice;
+        priceInput.style.width = '100%';
+        priceInput.addEventListener('input', () => updateSubtotal(row));
+        priceCell.appendChild(priceInput);
+        const subtotalCell = row.insertCell(3);
+        const subtotalSpan = document.createElement('span');
+        subtotalSpan.className = 'subtotal';
+        subtotalCell.appendChild(subtotalSpan);
+        const actionCell = row.insertCell(4);
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '删除';
+        delBtn.className = 'remove-row-btn';
+        delBtn.onclick = () => row.remove();
+        actionCell.appendChild(delBtn);
+        updateSubtotal(row);
+    }
+
+    function updateSubtotal(row) {
+        const qty = parseFloat(row.cells[1].querySelector('input').value) || 0;
+        const price = parseFloat(row.cells[2].querySelector('input').value) || 0;
+        const subtotal = qty * price;
+        row.cells[3].querySelector('.subtotal').innerText = subtotal.toFixed(2);
+    }
+
+    function collectEditDetails() {
+        const details = [];
+        const rows = document.querySelectorAll('#editItemsBody tr');
+        for (let row of rows) {
+            const productSelect = row.cells[0].querySelector('select');
+            const productName = productSelect.value;
+            if (!productName) continue;
+            const productInfo = productMap.get(productName);
+            if (!productInfo) continue;
+            const quantity = parseFloat(row.cells[1].querySelector('input').value);
+            const unitPrice = parseFloat(row.cells[2].querySelector('input').value);
+            if (isNaN(quantity) || quantity <= 0) continue;
+            details.push({
+                productId: productInfo.id,
+                quantity: quantity,
+                unitPrice: unitPrice
+            });
+        }
+        return details;
+    }
+
+    async function saveEdit(event) {
+        event.preventDefault();
+        const id = document.getElementById('editOrderId').value;
+        const actualAmount = parseFloat(document.getElementById('editActualAmount').value);
+        const payMethod = document.getElementById('editPayMethod').value;
+        const remark = document.getElementById('editRemark').value;
+        const details = collectEditDetails();
+        if (details.length === 0) {
+            alert('请至少添加一条有效的商品明细');
+            return;
+        }
+        const payload = { id: parseInt(id), actualAmount, payMethod, remark, details };
+        try {
+            await apiRequest('/admin/orders', { method: 'PUT', body: JSON.stringify(payload) });
+            alert('修改成功');
+            closeEditModal();
+            loadOrders();
+        } catch (err) {
+            alert('修改失败：' + err.message);
+        }
+    }
+
+    async function deleteOrder(id) {
+        if (!confirm('确定删除该订单吗？删除后不可恢复。')) return;
+        try {
+            await apiRequest(`/admin/orders/${id}`, { method: 'DELETE' });
+            loadOrders();
+        } catch (err) {
+            alert('删除失败：' + err.message);
+        }
+    }
+
+    // 员工新增订单
+    async function showAddModal() {
+        await ensureProductsLoaded();
+        if (productMap.size === 0) {
+            alert('商品列表加载失败，请刷新页面重试');
+            return;
+        }
+        document.getElementById('addForm').reset();
+        document.getElementById('addItemsBody').innerHTML = '';
+        addAddRow();
+        document.getElementById('addModal').style.display = 'flex';
+    }
+
+    function addAddRow(productName = '', quantity = 0, unitPrice = 0) {
+        const tbody = document.getElementById('addItemsBody');
+        const row = tbody.insertRow();
+        const selectCell = row.insertCell(0);
+        const select = document.createElement('select');
+        select.className = 'product-select';
+        select.style.width = '100%';
+        const optionEmpty = document.createElement('option');
+        optionEmpty.value = '';
+        optionEmpty.textContent = '请选择商品';
+        select.appendChild(optionEmpty);
+        for (let [name, info] of productMap.entries()) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (name === productName) opt.selected = true;
+            select.appendChild(opt);
+        }
+        select.addEventListener('change', function() {
+            const selectedName = this.value;
+            if (selectedName && productMap.has(selectedName)) {
+                const priceInput = row.cells[2].querySelector('input');
+                priceInput.value = productMap.get(selectedName).price;
+                updateAddSubtotal(row);
+            } else {
+                row.cells[2].querySelector('input').value = '';
+                updateAddSubtotal(row);
+            }
+        });
+        selectCell.appendChild(select);
+        const qtyCell = row.insertCell(1);
+        const qtyInput = document.createElement('input');
+        qtyInput.type = 'number';
+        qtyInput.step = 'any';
+        qtyInput.value = quantity;
+        qtyInput.style.width = '100%';
+        qtyInput.addEventListener('input', () => updateAddSubtotal(row));
+        qtyCell.appendChild(qtyInput);
+        const priceCell = row.insertCell(2);
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.step = 'any';
+        priceInput.value = unitPrice;
+        priceInput.style.width = '100%';
+        priceInput.addEventListener('input', () => updateAddSubtotal(row));
+        priceCell.appendChild(priceInput);
+        const subtotalCell = row.insertCell(3);
+        const subtotalSpan = document.createElement('span');
+        subtotalSpan.className = 'subtotal';
+        subtotalCell.appendChild(subtotalSpan);
+        const actionCell = row.insertCell(4);
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '删除';
+        delBtn.className = 'remove-row-btn';
+        delBtn.onclick = () => row.remove();
+        actionCell.appendChild(delBtn);
+        updateAddSubtotal(row);
+    }
+
+    function updateAddSubtotal(row) {
+        const qty = parseFloat(row.cells[1].querySelector('input').value) || 0;
+        const price = parseFloat(row.cells[2].querySelector('input').value) || 0;
+        const subtotal = qty * price;
+        row.cells[3].querySelector('.subtotal').innerText = subtotal.toFixed(2);
+    }
+
+    function collectAddDetails() {
+        const details = [];
+        const rows = document.querySelectorAll('#addItemsBody tr');
+        for (let row of rows) {
+            const productSelect = row.cells[0].querySelector('select');
+            const productName = productSelect.value;
+            if (!productName) continue;
+            const productInfo = productMap.get(productName);
+            if (!productInfo) continue;
+            const quantity = parseFloat(row.cells[1].querySelector('input').value);
+            const unitPrice = parseFloat(row.cells[2].querySelector('input').value);
+            if (isNaN(quantity) || quantity <= 0) continue;
+            details.push({
+                productId: productInfo.id,
+                quantity: quantity,
+                unitPrice: unitPrice
+            });
+        }
+        return details;
+    }
+
+    async function saveAddOrder(event) {
+        event.preventDefault();
+        const customerId = document.getElementById('addCustomerId').value;
+        const payMethod = document.getElementById('addPayMethod').value;
+        let actualAmount = document.getElementById('addActualAmount').value;
+        actualAmount = actualAmount ? parseFloat(actualAmount) : null;
+        const remark = document.getElementById('addRemark').value;
+        const details = collectAddDetails();
+        if (details.length === 0) {
+            alert('请至少添加一条有效的商品明细');
+            return;
+        }
+        const deptId = currentUser.deptId;
+        const operatorId = currentUser.userId;
+        if (!deptId) {
+            alert('无法获取您的部门信息，请重新登录');
+            return;
+        }
+        const payload = {
+            customerId: customerId ? parseInt(customerId) : null,
+            operatorId: operatorId,
+            deptId: deptId,
+            payMethod: payMethod,
+            actualAmount: actualAmount,
+            remark: remark,
+            details: details
+        };
+        try {
+            await apiRequest('/employee/orders', { method: 'POST', body: JSON.stringify(payload) });
+            alert('新增订单成功');
+            closeAddModal();
+            loadOrders();
+        } catch (err) {
+            alert('新增失败：' + err.message);
+        }
+    }
+
+    function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+    function closeDetailModal() { document.getElementById('detailModal').style.display = 'none'; }
+    function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+
+    async function init() {
+        initUserInfo();
+        await loadDepts();
+        await loadProducts();
+        await loadCustomers();
+        const { startDate, endDate } = getDefaultDateRange();
+        document.getElementById('searchStartDate').value = startDate;
+        document.getElementById('searchEndDate').value = endDate;
+        await loadOrders();
+
+        if (userRole === 'EMPLOYEE') {
+            document.getElementById('addOrderBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('addOrderBtn').style.display = 'none';
+        }
+    }
+
+    // 事件绑定
+    document.getElementById('searchBtn').addEventListener('click', searchOrders);
+    document.getElementById('resetBtn').addEventListener('click', resetSearch);
+    document.getElementById('closeDetailBtn').addEventListener('click', closeDetailModal);
+    document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+    document.getElementById('editForm').addEventListener('submit', saveEdit);
+    document.getElementById('addItemBtn').addEventListener('click', () => addEditRow());
+    document.getElementById('addOrderBtn').addEventListener('click', showAddModal);
+    document.getElementById('cancelAddBtn').addEventListener('click', closeAddModal);
+    document.getElementById('addForm').addEventListener('submit', saveAddOrder);
+    document.getElementById('addItemBtnAdd').addEventListener('click', () => addAddRow());
+    window.onclick = function(event) {
+        if (event.target === document.getElementById('detailModal')) closeDetailModal();
+        if (event.target === document.getElementById('editModal')) closeEditModal();
+        if (event.target === document.getElementById('addModal')) closeAddModal();
+    };
+
+    init();
+</script>
+</body>
+</html>
