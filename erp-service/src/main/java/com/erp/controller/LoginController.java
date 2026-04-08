@@ -25,7 +25,7 @@ public class LoginController {
         Employee employee = employeeService.login(loginDTO.getUsername(), loginDTO.getPassword());
 
         // 生成 JWT
-        String token = jwtUtil.generateToken(employee.getId(), employee.getUsername(), employee.getRole(), employee.getDeptId());
+        String token = jwtUtil.generateToken(employee.getId(), employee.getUsername(), employee.getRole(), employee.getDeptId(), employee.getName());
 
         // 返回 token
         return Result.success(token);

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,11 +68,12 @@ public class JwtUtil {
     }
 
     // 生成token
-    public String generateToken(Integer userId, String username, String role, Integer deptId) {
+    public String generateToken(Integer userId, String username, String role, Integer deptId, String name) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("role", role);
         claims.put("deptId", deptId);
+        claims.put("name", URLEncoder.encode(name, StandardCharsets.UTF_8));
         return doGenerateToken(claims, username);
     }
 
