@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>统计报表</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .toolbar { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .btn { background: #b22222; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .chart-container { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .chart-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-left: 4px solid #b22222; padding-left: 10px; }
+        .chart-box { width: 100%; height: 400px; }
+        .date-picker { display: flex; align-items: center; gap: 10px; }
+        .date-picker input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        .error-msg { color: red; margin-top: 10px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+<div>
+    <div class="toolbar">
+        <div class="date-picker">
+            <span>开始日期：</span>
+            <input type="date" id="startDate">
+            <span>结束日期：</span>
+            <input type="date" id="endDate">
+            <button class="btn" id="queryBtn">查询</button>
+            <button class="btn" id="resetBtn">重置</button>
+        </div>
+    </div>
+    <div id="errorMsg" class="error-msg"></div>
+
+    <div class="chart-container">
+        <div class="chart-title">📈 营业额趋势（每日合计）</div>
+        <div id="trendChart" class="chart-box"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">🏢 部门营业额对比</div>
+        <div id="deptChart" class="chart-box"></div>
+    </div>
+</div>
+
+<script>
+    let trendChart = null;
+    let deptChart = null;
+    let deptMap = new Map();
+
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.parent.location.href = '/login.html';
+            throw new Error('未登录');
+        }
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.parent.location.href = '/login.html';
+            throw new Error('登录过期');
+        }
+        const data = await res.json();
+        if (data.code !== 1) throw new Error(data.msg);
+        return data.data;
+    }
+
+    async function loadDepts() {
+        try {
+            const data = await apiRequest('/admin/depts/page?pageNum=1&pageSize=100');
+            const depts = data.records || [];
+            deptMap.clear();
+            depts.forEach(d => { deptMap.set(d.id, d.name); });
+        } catch (err) {
+            console.error('加载部门列表失败', err);
+        }
+    }
+
+    function getDefaultDateRange() {
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 6);
+        const format = (date) => date.toISOString().slice(0,10);
+        return { startDate: format(sevenDaysAgo), endDate: format(today) };
+    }
+
+    async function loadTurnover(startDate, endDate) {
+        try {
+            const url = `/admin/statistics/turnover?startDate=${startDate}&endDate=${endDate}`;
+            const data = await apiRequest(url);
+            const dateMap = new Map();
+            for (let item of data) {
+                const date = item.date;
+                const amount = item.totalAmount || 0;
+                dateMap.set(date, (dateMap.get(date) || 0) + amount);
+            }
+            const sortedDates = Array.from(dateMap.keys()).sort();
+            const amounts = sortedDates.map(d => {
+                let val = dateMap.get(d);
+                // 保留两位小数，解决浮点数精度问题
+                return Math.round(val * 100) / 100;
+            });
+            if (trendChart) {
+                trendChart.setOption({
+                    xAxis: { data: sortedDates },
+                    series: [{ data: amounts }]
+                });
+            }
+        } catch (err) {
+            document.getElementById('errorMsg').innerText = '加载营业额趋势失败：' + err.message;
+        }
+    }
+
+    async function loadDeptTurnover(startDate, endDate) {
+        try {
+            const url = `/admin/statistics/deptTurnover?startDate=${startDate}&endDate=${endDate}`;
+            const data = await apiRequest(url);
+            let deptNames = [];
+            let amounts = [];
+            for (let item of data) {
+                let deptName = item.deptName;
+                if (!deptName && item.deptId) {
+                    deptName = deptMap.get(item.deptId) || `部门${item.deptId}`;
+                }
+                if (!deptName) deptName = '未知部门';
+                deptNames.push(deptName);
+                let amount = item.totalAmount || 0;
+                amounts.push(Math.round(amount * 100) / 100);
+            }
+            if (deptChart) {
+                deptChart.setOption({
+                    xAxis: { data: deptNames },
+                    series: [{ data: amounts }]
+                });
+            }
+        } catch (err) {
+            document.getElementById('errorMsg').innerText = '加载部门对比失败：' + err.message;
+        }
+    }
+
+    async function refreshCharts() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        if (!startDate || !endDate) {
+            alert('请选择完整的日期范围');
+            return;
+        }
+        document.getElementById('errorMsg').innerText = '';
+        await loadTurnover(startDate, endDate);
+        await loadDeptTurnover(startDate, endDate);
+    }
+
+    function resetDateRange() {
+        const { startDate, endDate } = getDefaultDateRange();
+        document.getElementById('startDate').value = startDate;
+        document.getElementById('endDate').value = endDate;
+        refreshCharts();
+    }
+
+    function initCharts() {
+        const trendDom = document.getElementById('trendChart');
+        const deptDom = document.getElementById('deptChart');
+        if (trendDom) {
+            trendChart = echarts.init(trendDom);
+            trendChart.setOption({
+                tooltip: { trigger: 'axis' },
+                xAxis: { type: 'category', name: '日期' },
+                yAxis: { type: 'value', name: '营业额(元)' },
+                series: [{ type: 'line', smooth: true, name: '合计营业额', data: [], lineStyle: { color: '#b22222' }, areaStyle: { opacity: 0.1 } }]
+            });
+        }
+        if (deptDom) {
+            deptChart = echarts.init(deptDom);
+            deptChart.setOption({
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                xAxis: { type: 'category', name: '部门' },
+                yAxis: { type: 'value', name: '营业额(元)' },
+                series: [{ type: 'bar', data: [], itemStyle: { color: '#b22222' } }]
+            });
+        }
+    }
+
+    window.addEventListener('resize', () => {
+        if (trendChart) trendChart.resize();
+        if (deptChart) deptChart.resize();
+    });
+
+    async function init() {
+        await loadDepts();
+        initCharts();
+        const { startDate, endDate } = getDefaultDateRange();
+        document.getElementById('startDate').value = startDate;
+        document.getElementById('endDate').value = endDate;
+        await refreshCharts();
+    }
+
+    document.getElementById('queryBtn').addEventListener('click', refreshCharts);
+    document.getElementById('resetBtn').addEventListener('click', resetDateRange);
+
+    init();
+</script>
+</body>
+</html>

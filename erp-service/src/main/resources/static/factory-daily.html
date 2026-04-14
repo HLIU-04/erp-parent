@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>工厂日报管理</title>
+    <style>
+        /* 样式与之前相同，省略... 请从之前复制 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .toolbar { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; background: white; padding: 15px; border-radius: 8px; flex-wrap: wrap; }
+        .toolbar label { font-weight: bold; }
+        .btn { background: #b22222; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .btn-secondary { background: #28a745; }
+        .btn-cancel { background: #ccc; color: #333; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .data-table-container { background: white; border-radius: 8px; padding: 10px; overflow-x: auto; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+        th { background: #f5f5f5; position: sticky; top: 0; }
+        .product-row td:first-child { background: #f9f9f9; font-weight: bold; text-align: left; }
+        input { width: 80px; padding: 4px; text-align: center; }
+        .card-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+        .card { background: white; border-radius: 8px; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-info { font-size: 16px; }
+        .card-info strong { color: #b22222; }
+        .card-status { font-size: 14px; color: #666; margin-left: 20px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 1200px; max-height: 80%; overflow-y: auto; }
+        .modal-content h3 { margin-bottom: 15px; }
+        .modal-buttons { margin-top: 20px; text-align: right; }
+        .error-msg { color: red; margin-top: 10px; }
+        .loading { text-align: center; padding: 20px; }
+        .refresh-btn { margin-left: auto; }
+        .dept-status { display: inline-block; margin: 0 5px; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .status-done { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .readonly-weight { background: #f5f5f5; padding: 4px; border-radius: 4px; display: inline-block; width: 80px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="toolbar">
+        <div>
+            <label>业务日期：</label>
+            <input type="date" id="deliveryDate" style="padding:6px;">
+        </div>
+        <button class="btn" id="saveDeliveryBtn">💾 保存发货</button>
+        <button class="btn btn-secondary" id="refreshListBtn">🔄 刷新列表</button>
+        <span id="saveResult" style="margin-left: 10px;"></span>
+    </div>
+
+    <div class="data-table-container">
+        <div style="overflow-x: auto;">
+            <table id="deliveryTable">
+                <thead id="tableHeader"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3>已登记的日报（按日期分组）</h3>
+    <div id="reportList" class="card-list">
+        <div class="loading">加载中...</div>
+    </div>
+</div>
+
+<!-- 批量结存登记模态框 -->
+<div id="remainingModal" class="modal">
+    <div class="modal-content">
+        <h3>批量结存登记 - 日期：<span id="modalDate"></span></h3>
+        <div id="remainingDynamicContent"></div>
+        <div class="modal-buttons">
+            <button class="btn" id="submitRemainingBtn">提交全部结存</button>
+            <button class="btn-cancel" id="closeRemainingBtn">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUserDeptName = '';
+    let currentUserDeptId = null;
+    let allProducts = [];
+    let allDepts = [];
+    let deptNameToId = {};
+    let productNameToId = {};
+
+    const PRODUCT_ORDER = [
+        '香酥鸭', '盐焗鸭', '泡萝卜', '鸭腿', '酱板鸭', '鹅翅', '鸭翅', '辣鸡爪', '辣鸭掌', '盐鸡爪',
+        '盐鸭掌', '锁骨', '香肠', '鸭肫', '翅尖', '鸭脖', '鹌鹑', '翅根', '干子', '藕', '海带丝',
+        '腱子牛肉', '牛肉', '木瓜丝', '萝卜干', '蚕豆', '花生'
+    ];
+    const DEPT_ORDER = ['融科', '穗丰', '百步亭', '光华路'];
+
+    async function fetchCurrentUserDept() {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('未登录');
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(base64));
+        const deptId = payload.deptId;
+        const deptData = await apiRequest(`/admin/depts/${deptId}`);
+        currentUserDeptId = deptId;
+        currentUserDeptName = deptData.name;
+        if (currentUserDeptName !== '兴业路') {
+            alert('您没有权限使用工厂日报功能');
+            window.parent.location.href = '/index.html';
+            throw new Error('权限不足');
+        }
+    }
+
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.parent.location.href = '/login.html';
+            throw new Error('未登录');
+        }
+        const res = await fetch(url, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            }
+        });
+        if (res.status === 401) {
+            localStorage.removeItem('token');
+            window.parent.location.href = '/login.html';
+            throw new Error('登录过期');
+        }
+        const data = await res.json();
+        if (data.code !== 1) throw new Error(data.msg);
+        return data.data;
+    }
+
+    async function loadDepts() {
+        const data = await apiRequest('/admin/depts/page?pageNum=1&pageSize=100');
+        allDepts = data.records || [];
+        allDepts.forEach(d => { deptNameToId[d.name] = d.id; });
+    }
+
+    async function loadProducts() {
+        const data = await apiRequest('/admin/products/page?pageNum=1&pageSize=100');
+        allProducts = data.records || [];
+        allProducts.forEach(p => { productNameToId[p.name] = p.id; });
+    }
+
+    function buildTableHeader() {
+        let html = '<tr><th>商品名称</th>';
+        DEPT_ORDER.forEach(dept => {
+            html += `<th colspan="1">${dept}<br>(发货重量)</th>`;
+        });
+        html += '</tr>';
+        document.getElementById('tableHeader').innerHTML = html;
+    }
+
+    function buildTableBody() {
+        let tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        for (let productName of PRODUCT_ORDER) {
+            let row = tbody.insertRow();
+            row.className = 'product-row';
+            let nameCell = row.insertCell(0);
+            nameCell.innerText = productName;
+            nameCell.style.textAlign = 'left';
+            for (let i = 0; i < DEPT_ORDER.length; i++) {
+                let cell = row.insertCell(i+1);
+                let input = document.createElement('input');
+                input.type = 'number';
+                input.step = 'any';
+                input.value = '';
+                input.placeholder = '0';
+                input.style.width = '80px';
+                cell.appendChild(input);
+            }
+        }
+    }
+
+    function collectDeliveryData() {
+        let rows = document.querySelectorAll('#tableBody tr');
+        let dataByDept = {};
+        DEPT_ORDER.forEach(dept => { dataByDept[dept] = []; });
+        for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+            let row = rows[rowIdx];
+            let productName = row.cells[0].innerText;
+            let productId = productNameToId[productName];
+            if (!productId) {
+                console.warn(`未找到商品: ${productName}`);
+                continue;
+            }
+            for (let colIdx = 0; colIdx < DEPT_ORDER.length; colIdx++) {
+                let input = row.cells[colIdx+1].querySelector('input');
+                let weight = parseFloat(input.value);
+                if (!isNaN(weight) && weight > 0) {
+                    let deptName = DEPT_ORDER[colIdx];
+                    dataByDept[deptName].push({
+                        productId: productId,
+                        deliveryWeight: weight
+                    });
+                }
+            }
+        }
+        return dataByDept;
+    }
+
+    async function saveDelivery() {
+        const deliveryDate = document.getElementById('deliveryDate').value;
+        if (!deliveryDate) {
+            alert('请先选择业务日期');
+            return;
+        }
+        const dataByDept = collectDeliveryData();
+        let successCount = 0;
+        let failCount = 0;
+        for (let deptName of DEPT_ORDER) {
+            let items = dataByDept[deptName];
+            if (items.length === 0) continue;
+            let deptId = deptNameToId[deptName];
+            if (!deptId) continue;
+            let payload = {
+                deptId: deptId,
+                deliveryDate: deliveryDate,
+                items: items
+            };
+            try {
+                await apiRequest('/employee/daily-report/delivery', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`保存${deptName}失败`, err);
+                failCount++;
+            }
+        }
+        let msg = `保存完成：成功 ${successCount} 个部门，失败 ${failCount} 个部门。`;
+        document.getElementById('saveResult').innerText = msg;
+        if (successCount > 0) {
+            setTimeout(() => loadReportList(), 500);
+        }
+    }
+
+    async function loadReportList() {
+        try {
+            let startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            startDate = startDate.toISOString().slice(0,10);
+            let url = `/admin/daily-report/page?pageNum=1&pageSize=200&startDate=${startDate}`;
+            let data = await apiRequest(url);
+            let reports = data.records || [];
+            let groupMap = new Map();
+            for (let report of reports) {
+                let date = report.deliveryDate;
+                let dept = allDepts.find(d => d.id === report.deptId);
+                let deptName = dept ? dept.name : '未知';
+                if (!groupMap.has(date)) {
+                    groupMap.set(date, { date, deptReports: [] });
+                }
+                groupMap.get(date).deptReports.push({
+                    deptId: report.deptId,
+                    deptName: deptName,
+                    reportId: report.id,
+                    totalAmount: report.totalAmount
+                });
+            }
+            let container = document.getElementById('reportList');
+            if (groupMap.size === 0) {
+                container.innerHTML = '<div class="card">暂无日报记录</div>';
+                return;
+            }
+            let html = '';
+            for (let [date, group] of groupMap.entries()) {
+                let deptStatusHtml = '';
+                for (let deptReport of group.deptReports) {
+                    let statusClass = deptReport.totalAmount > 0 ? 'status-done' : 'status-pending';
+                    let statusText = deptReport.totalAmount > 0 ? '已结存' : '待结存';
+                    deptStatusHtml += `<span class="dept-status ${statusClass}">${deptReport.deptName}:${statusText}</span>`;
+                }
+                html += `
+                    <div class="card" data-date="${date}">
+                        <div class="card-info">
+                            <strong>${date}</strong>
+                            <div class="card-status">${deptStatusHtml}</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary batch-remaining-btn" data-date="${date}">📝 批量结存</button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            document.querySelectorAll('.batch-remaining-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    let date = btn.getAttribute('data-date');
+                    openBatchRemainingModal(date);
+                });
+            });
+        } catch (err) {
+            document.getElementById('reportList').innerHTML = `<div class="card">加载失败: ${err.message}</div>`;
+        }
+    }
+
+    // 修改后的结存打开函数：只显示有发货记录的商品
+    async function openBatchRemainingModal(deliveryDate) {
+        try {
+            let deptItemsMap = new Map(); // key: deptId, value: Map<productId, {deliveryWeight, remainingWeight, productName}>
+            let validDepts = []; // 记录有发货记录的部门顺序
+            for (let dept of allDepts) {
+                if (!DEPT_ORDER.includes(dept.name)) continue;
+                let pageUrl = `/admin/daily-report/page?pageNum=1&pageSize=1&deptId=${dept.id}&startDate=${deliveryDate}&endDate=${deliveryDate}`;
+                let pageData = await apiRequest(pageUrl);
+                let records = pageData.records || [];
+                let itemsMap = new Map();
+                if (records.length > 0) {
+                    let reportId = records[0].id;
+                    let detail = await apiRequest(`/admin/daily-report/${reportId}`);
+                    for (let item of detail.items) {
+                        itemsMap.set(item.productId, {
+                            deliveryWeight: item.deliveryWeight,
+                            remainingWeight: item.remainingWeight,
+                            productName: item.productName
+                        });
+                    }
+                }
+                if (itemsMap.size > 0) {
+                    deptItemsMap.set(dept.id, itemsMap);
+                    validDepts.push(dept.name);
+                }
+            }
+            if (validDepts.length === 0) {
+                alert('所选日期没有可结存的日报（请先发货）');
+                return;
+            }
+            let content = document.getElementById('remainingDynamicContent');
+            content.innerHTML = '';
+            for (let deptName of validDepts) {
+                let deptId = deptNameToId[deptName];
+                let itemsMap = deptItemsMap.get(deptId);
+                let div = document.createElement('div');
+                div.style.marginBottom = '20px';
+                div.style.border = '1px solid #ddd';
+                div.style.padding = '10px';
+                div.style.borderRadius = '8px';
+                let title = document.createElement('h4');
+                title.innerText = deptName;
+                div.appendChild(title);
+                let table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                let thead = table.createTHead();
+                let headerRow = thead.insertRow();
+                headerRow.insertCell(0).innerText = '商品名称';
+                headerRow.insertCell(1).innerText = '发货重量';
+                headerRow.insertCell(2).innerText = '剩货重量';
+                let tbody = table.createTBody();
+                for (let [productId, item] of itemsMap.entries()) {
+                    let productName = item.productName;
+                    let row = tbody.insertRow();
+                    row.insertCell(0).innerText = productName;
+                    let deliveryCell = row.insertCell(1);
+                    deliveryCell.innerText = item.deliveryWeight;
+                    deliveryCell.style.backgroundColor = '#f5f5f5';
+                    let remainingCell = row.insertCell(2);
+                    let input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = 'any';
+                    input.value = item.remainingWeight;
+                    input.style.width = '80px';
+                    remainingCell.appendChild(input);
+                    row.productId = productId;
+                }
+                div.appendChild(table);
+                content.appendChild(div);
+            }
+            document.getElementById('modalDate').innerText = deliveryDate;
+            window.currentBatchRemaining = { deliveryDate, validDepts };
+            document.getElementById('remainingModal').style.display = 'flex';
+        } catch (err) {
+            alert('打开结存窗口失败：' + err.message);
+        }
+    }
+
+    async function submitBatchRemaining() {
+        let { deliveryDate, validDepts } = window.currentBatchRemaining;
+        let divs = document.querySelectorAll('#remainingDynamicContent > div');
+        if (divs.length !== validDepts.length) {
+            console.warn('部门数量不匹配');
+        }
+        let successCount = 0;
+        let failCount = 0;
+        for (let idx = 0; idx < divs.length; idx++) {
+            let div = divs[idx];
+            let deptName = validDepts[idx];
+            let deptId = deptNameToId[deptName];
+            let table = div.querySelector('table');
+            let rows = table.tBodies[0].rows;
+            let items = [];
+            for (let row of rows) {
+                let productId = row.productId;
+                let remainingInput = row.cells[2].querySelector('input');
+                let remainingWeight = parseFloat(remainingInput.value);
+                if (isNaN(remainingWeight)) remainingWeight = 0;
+                items.push({
+                    productId: productId,
+                    remainingWeight: remainingWeight
+                });
+            }
+            if (items.length === 0) continue;
+            let payload = {
+                deptId: deptId,
+                deliveryDate: deliveryDate,
+                items: items
+            };
+            try {
+                await apiRequest('/employee/daily-report/remaining', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`结存${deptName}失败`, err);
+                failCount++;
+            }
+        }
+        alert(`结存完成：成功 ${successCount} 个部门，失败 ${failCount} 个部门。`);
+        if (successCount > 0) {
+            closeRemainingModal();
+            loadReportList();
+        }
+    }
+
+    function closeRemainingModal() {
+        document.getElementById('remainingModal').style.display = 'none';
+    }
+
+    async function init() {
+        try {
+            await fetchCurrentUserDept();
+            await loadDepts();
+            await loadProducts();
+            buildTableHeader();
+            buildTableBody();
+            let tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            let yyyy = tomorrow.getFullYear();
+            let mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            let dd = String(tomorrow.getDate()).padStart(2, '0');
+            document.getElementById('deliveryDate').value = `${yyyy}-${mm}-${dd}`;
+            await loadReportList();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    document.getElementById('saveDeliveryBtn').addEventListener('click', saveDelivery);
+    document.getElementById('refreshListBtn').addEventListener('click', loadReportList);
+    document.getElementById('submitRemainingBtn').addEventListener('click', submitBatchRemaining);
+    document.getElementById('closeRemainingBtn').addEventListener('click', closeRemainingModal);
+    window.onclick = function(event) {
+        let modal = document.getElementById('remainingModal');
+        if (event.target === modal) closeRemainingModal();
+    };
+
+    init();
+</script>
+</body>
+</html>

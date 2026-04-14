@@ -2,6 +2,7 @@ package com.erp.controller.admin;
 
 import com.erp.result.Result;
 import com.erp.service.DailyReportService;
+import com.erp.vo.DeptTurnoverStatVO;
 import com.erp.vo.TurnoverStatVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,9 +45,9 @@ public class StatisticsController {
      * @return
      */
     @GetMapping("/deptTurnover")
-    public Result<List<TurnoverStatVO>> getDeptTurnover(@RequestParam@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                                                        @RequestParam@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
-        List<TurnoverStatVO> list = dailyReportService.getDeptTurnoverByDateRange(startDate, endDate);
+    public Result<List<DeptTurnoverStatVO>> getDeptTurnover(@RequestParam@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                                                            @RequestParam@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        List<DeptTurnoverStatVO> list = dailyReportService.getDeptTurnoverByDateRange(startDate, endDate);
 
         return Result.success(list);
     }
