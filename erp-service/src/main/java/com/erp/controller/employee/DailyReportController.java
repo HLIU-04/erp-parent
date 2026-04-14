@@ -28,7 +28,7 @@ public class DailyReportController {
      * @param dailyReportDeliveryDTO
      * @return
      */
-    @PostMapping("/daily-report")
+    @PostMapping("/daily-report/delivery")
     public Result delivery(@RequestBody DailyReportDeliveryDTO dailyReportDeliveryDTO){
         dailyReportService.delivery(dailyReportDeliveryDTO);
         return Result.success();
@@ -39,7 +39,7 @@ public class DailyReportController {
      * @param dailyReportRemainingDTO
      * @return
      */
-    @PutMapping("/remaining")
+    @PostMapping("/daily-report/remaining")
     public Result remaining(@RequestBody DailyReportRemainingDTO dailyReportRemainingDTO){
         dailyReportService.remaining(dailyReportRemainingDTO);
         return Result.success();

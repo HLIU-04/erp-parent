@@ -13,15 +13,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -59,10 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 4. 创建 UserDetails 对象（Spring Security 需要）
                 // 这里简单构建，实际可以自定义 UserDetails 实现，包含角色等
-                UserDetails userDetails = User.withUsername(username)
-                        .password("") // 密码不需要，因为 JWT 已验证
-                        .authorities(role)
-                        .build();
+                // 创建权限列表
+                List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(role);
+                UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "", authorities);
+                log.info("用户 {} 的权限: {}", username, authorities);
 
                 // 5. 创建认证令牌
                 UsernamePasswordAuthenticationToken authentication =

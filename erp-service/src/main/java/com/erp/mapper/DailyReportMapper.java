@@ -1,6 +1,8 @@
 package com.erp.mapper;
 
 import com.erp.entity.DailyReport;
+import com.erp.vo.DailyReportItemExportVO;
+import com.erp.vo.DeptTurnoverStatVO;
 import com.erp.vo.TurnoverStatVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -64,5 +66,12 @@ public interface DailyReportMapper {
      * @param endDate
      * @return
      */
-    List<TurnoverStatVO> selectDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate);
+    List<DeptTurnoverStatVO> selectDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 根据发货日期查询日报项
+     * @param deliveryDate
+     * @return
+     */
+    List<DailyReportItemExportVO> selectExportData(LocalDate deliveryDate);
 }

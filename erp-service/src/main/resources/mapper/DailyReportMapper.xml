@@ -46,15 +46,28 @@
         order by delivery_date asc
     </select>
 
-    <select id="selectDeptTurnoverByDateRange" resultType="com.erp.vo.TurnoverStatVO">
+    <select id="selectDeptTurnoverByDateRange" resultType="com.erp.vo.DeptTurnoverStatVO">
+        SELECT
+            d.name AS deptName,
+            SUM(dr.total_amount) AS totalAmount
+        FROM daily_report dr
+                 JOIN dept d ON dr.dept_id = d.id
+        WHERE dr.delivery_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY d.id, d.name
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="selectExportData" resultType="com.erp.vo.DailyReportItemExportVO">
         select
-            d.id as deptId,
             d.name as deptName,
-            sum(r.total_amount) as totalAmount
-        from daily_report r
-        left join dept d on r.dept_id = d.id
-        where r.delivery_date between #{startDate} and #{endDate}
-        group by d.id, d.name
-        order by totalAmount desc
+            p.name as productName,
+            di.delivery_weight as deliveryWeight,
+            di.remaining_weight as remainingWeight
+        from daily_report dr
+                 join daily_report_item di on dr.id = di.report_id
+                 join dept d on dr.dept_id = d.id
+                 join product p on di.product_id = p.id
+        where dr.delivery_date = #{deliveryDate}
+        order by d.id, p.id
     </select>
 </mapper>

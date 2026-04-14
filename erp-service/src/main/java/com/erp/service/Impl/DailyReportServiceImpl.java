@@ -14,9 +14,7 @@ import com.erp.mapper.DeptMapper;
 import com.erp.mapper.ProductMapper;
 import com.erp.result.PageResult;
 import com.erp.service.DailyReportService;
-import com.erp.vo.DailyReportDetailVO;
-import com.erp.vo.DailyReportPageVO;
-import com.erp.vo.TurnoverStatVO;
+import com.erp.vo.*;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -227,8 +225,6 @@ public class DailyReportServiceImpl implements DailyReportService {
      */
     public PageResult pageQuery(Integer pageNum, Integer pageSize, Integer deptId, LocalDate startDate, LocalDate endDate) {
 
-        // TODO: 后续登录功能完成后，应从当前登录员工获取部门ID，不再依赖前端传入
-
         //开启分页
         PageHelper.startPage(pageNum, pageSize);
 
@@ -329,8 +325,17 @@ public class DailyReportServiceImpl implements DailyReportService {
      * @param endDate
      * @return
      */
-    public List<TurnoverStatVO> getDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate) {
+    public List<DeptTurnoverStatVO> getDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate) {
 
         return dailyReportMapper.selectDeptTurnoverByDateRange(startDate, endDate);
+    }
+
+    /**
+     * 根据发货日期查询日报数据
+     * @param deliveryDate
+     * @return
+     */
+    public List<DailyReportItemExportVO> getExportData(LocalDate deliveryDate) {
+        return dailyReportMapper.selectExportData(deliveryDate);
     }
 }

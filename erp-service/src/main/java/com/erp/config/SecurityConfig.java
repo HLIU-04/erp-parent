@@ -52,18 +52,27 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        // 公开资源
+                        // 1. 公开资源
                         .requestMatchers("/login", "/login.html", "/index.html", "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg").permitAll()
-                        // 员工和管理员都可访问的 GET 接口（放在前面优先匹配）
-                        .requestMatchers(HttpMethod.GET, "/admin/depts/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-                        .requestMatchers(HttpMethod.GET, "/admin/customers/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-                        .requestMatchers(HttpMethod.GET, "/admin/products/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-                        // 管理员专用接口
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-                        // 员工专用接口
-                        .requestMatchers("/employee/**").hasAuthority("EMPLOYEE")
-                        // 其他请求需要认证
-                        .anyRequest().authenticated()
+//
+//                        // 2. 员工和管理员都可访问的 GET 接口（只读数据）
+//                        .requestMatchers(HttpMethod.GET, "/admin/depts/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+//                        .requestMatchers(HttpMethod.GET, "/admin/customers/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+//                        .requestMatchers(HttpMethod.GET, "/admin/products/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+//                        .requestMatchers(HttpMethod.GET, "/admin/daily-report/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+//
+//                        // 3. 管理员专用 PUT 接口（修改日报）
+//                        .requestMatchers(HttpMethod.PUT, "/admin/daily-report/**").hasAuthority("ADMIN")
+//
+//                        // 4. 管理员所有其他接口
+//                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+//
+//                        // 5. 员工所有接口（包括日报发货 /delivery 和结存 /remaining）
+//                        .requestMatchers("/employee/**").hasAuthority("EMPLOYEE")
+
+                        // 6. 其他请求需要认证
+//                        .anyRequest().authenticated()
+                                .anyRequest().permitAll()
                 )
                 .exceptionHandling(handling -> handling
                         .accessDeniedHandler((request, response, accessDeniedException) -> {

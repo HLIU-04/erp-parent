@@ -5,6 +5,8 @@ import com.erp.dto.DailyReportRemainingDTO;
 import com.erp.dto.DailyReportUpdateDTO;
 import com.erp.result.PageResult;
 import com.erp.vo.DailyReportDetailVO;
+import com.erp.vo.DailyReportItemExportVO;
+import com.erp.vo.DeptTurnoverStatVO;
 import com.erp.vo.TurnoverStatVO;
 
 import java.time.LocalDate;
@@ -64,5 +66,12 @@ public interface DailyReportService {
      * @param endDate
      * @return
      */
-    List<TurnoverStatVO> getDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate);
+    List<DeptTurnoverStatVO> getDeptTurnoverByDateRange(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 根据发货日期查询日报数据
+     * @param deliveryDate
+     * @return
+     */
+    List<DailyReportItemExportVO> getExportData(LocalDate deliveryDate);
 }
