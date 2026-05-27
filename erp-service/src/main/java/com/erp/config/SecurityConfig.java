@@ -35,16 +35,6 @@ public class SecurityConfig {
         return new InMemoryUserDetailsManager(); // 空实现
     }
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(
-                "/dept.html",
-                "/**/*.html",
-                "/**/*.css",
-                "/**/*.js",
-                "/favicon.ico"
-        );
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -52,27 +42,18 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 公开资源
-                        .requestMatchers("/login", "/login.html", "/index.html", "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg").permitAll()
-//
-//                        // 2. 员工和管理员都可访问的 GET 接口（只读数据）
-//                        .requestMatchers(HttpMethod.GET, "/admin/depts/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-//                        .requestMatchers(HttpMethod.GET, "/admin/customers/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-//                        .requestMatchers(HttpMethod.GET, "/admin/products/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-//                        .requestMatchers(HttpMethod.GET, "/admin/daily-report/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
-//
-//                        // 3. 管理员专用 PUT 接口（修改日报）
-//                        .requestMatchers(HttpMethod.PUT, "/admin/daily-report/**").hasAuthority("ADMIN")
-//
-//                        // 4. 管理员所有其他接口
-//                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
-//
-//                        // 5. 员工所有接口（包括日报发货 /delivery 和结存 /remaining）
-//                        .requestMatchers("/employee/**").hasAuthority("EMPLOYEE")
+                        // 1. 公开资源（无需登录）
+                        .requestMatchers("/login", "/login.html", "/index.html", "/dept.html", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/favicon.ico").permitAll()
 
-                        // 6. 其他请求需要认证
-//                        .anyRequest().authenticated()
-                                .anyRequest().permitAll()
+                        // 2. 员工可访问的接口
+                        .requestMatchers("/employee/**").hasAuthority("EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/products/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/customers/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/depts/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/categories/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/admin/daily-report/**").hasAnyAuthority("ADMIN", "EMPLOYEE")
+                        // 3. 其他所有请求需要管理员权限
+                        .anyRequest().hasAuthority("ADMIN")
                 )
                 .exceptionHandling(handling -> handling
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
